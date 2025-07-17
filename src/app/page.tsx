@@ -80,11 +80,6 @@ export default function Home() {
 		setTasks(tasks.filter((task) => task.id !== id));
 	};
 
-	const handleKeyPress = (e: React.KeyboardEvent) => {
-		if (e.key === "Enter") {
-			addTask();
-		}
-	};
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-gray-50 to-white pt-12 sm:pt-15'>
 			<div className='max-w-2xl mx-auto px-4 sm:px-6 lg:px-8'>
