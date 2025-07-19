@@ -4,27 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Lock, LogIn, Mail } from "lucide-react";
+import { Lock, Mail, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { login } from "./action";
+import { signup } from "./action";
 
-export default function Login() {
+export default function Signup() {
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-zinc-50 to-white flex items-center justify-center p-6'>
 			<Card className='w-full max-w-md border-0 shadow-2xl bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden'>
 				<CardHeader className='text-center pt-12'>
 					<div className='inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-zinc-900 to-zinc-700 rounded-full mb-6 shadow-lg mx-auto'>
-						<LogIn className='w-10 h-10 text-white' />
+						<User className='w-10 h-10 text-white' />
 					</div>
 					<CardTitle className='text-4xl font-extralight text-zinc-900 tracking-wide mb-2'>
-						ログイン
+						サインアップ
 					</CardTitle>
 					<p className='text-zinc-600 font-light text-lg'>
-						アカウントにサインイン
+						新しいアカウントを作成
 					</p>
 				</CardHeader>
 				<CardContent className='p-8'>
-					<form action={login} className='space-y-6'>
+					<form action={signup} className='space-y-6'>
 						{/* Email Input */}
 						<div>
 							<Label htmlFor='email' className='sr-only'>
@@ -61,39 +61,51 @@ export default function Login() {
 							</div>
 						</div>
 
+						{/* Confirm Password Input */}
+						<div>
+							<Label htmlFor='confirmPassword' className='sr-only'>
+								パスワード確認
+							</Label>
+							<div className='relative'>
+								<Lock className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400' />
+								<Input
+									id='confirmPassword'
+									type='password'
+									placeholder='パスワード確認'
+									name='confirmPassword'
+									required
+									className='w-full pl-10 pr-4 py-3 border border-zinc-200  bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-0 focus-visible:ring-0 focus:outline-none transition-all duration-300 font-light'
+								/>
+							</div>
+						</div>
+
 						{/* Error Message */}
 
-						{/* Login Button */}
+						{/* Signup Button */}
 						<Button
 							type='submit'
 							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg'
 						>
-							ログイン
+							アカウント作成
 						</Button>
 						<Button
 							type='submit'
 							className='w-full  bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg'
 						>
 							<FcGoogle className='w-4 h-4 mr-2' />
-							Googleでログイン
+							Googleでサインアップ
 						</Button>
 					</form>
 
-					{/* Forgot Password / Sign Up Links */}
+					{/* Sign In Link */}
 					<div className='mt-8 text-center text-sm'>
-						<Link
-							href='#'
-							className='text-zinc-600 hover:text-zinc-900 font-light transition-colors duration-200'
-						>
-							パスワードをお忘れですか？
-						</Link>
-						<p className='mt-4 text-zinc-600 font-light'>
-							アカウントをお持ちではありませんか？
+						<p className='text-zinc-600 font-light'>
+							すでにアカウントをお持ちですか？{" "}
 							<Link
-								href='/signup'
+								href='/login'
 								className='text-zinc-900 font-medium hover:underline'
 							>
-								サインアップ
+								ログイン
 							</Link>
 						</p>
 					</div>
