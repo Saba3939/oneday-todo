@@ -2,8 +2,6 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import TodoApp from "@/components/TodoApp"; // クライアントコンポーネントとして分離
 
-export const runtime = "edge";
-
 export default async function Home() {
 	const supabase = await createClient();
 
@@ -28,5 +26,4 @@ export default async function Home() {
 	};
 
 	return <TodoApp user={userProfile} />;
-
 }
