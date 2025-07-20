@@ -16,12 +16,20 @@ export default async function Home() {
 		redirect("/login");
 	}
 
+	// プロフィールが設定済みかチェック
+	const hasProfile =
+		user.user_metadata?.username || user.user_metadata?.display_name;
+
+	if (!hasProfile) {
+		redirect("/profile-setup");
+	}
+
 	// ユーザーのメタデータから追加情報を取得
 	const userProfile = {
 		id: user.id,
 		email: user.email || "",
 		username: user.user_metadata?.username || "",
-		displayName: user.user_metadata?.display_name || user.email,
+		displayName: user.user_metadata?.display_name || user.email || "",
 		avatarUrl: user.user_metadata?.avatar_url || "",
 	};
 

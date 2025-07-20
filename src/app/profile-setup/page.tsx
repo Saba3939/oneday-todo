@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar } from "@/components/ui/avatar";
-import { User, Upload, Check, ArrowLeft } from "lucide-react";
+import { User, Upload, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { updateProfile } from "@/app/profile-setup/action";
+import { updateProfile, skipProfileSetup } from "@/app/profile-setup/action";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -17,11 +17,11 @@ export default function ProfileSetup() {
 	const [displayName, setDisplayName] = useState("");
 	const [loading, setLoading] = useState(true);
 	const router = useRouter();
+	const supabase = createClient();
 
+	// ページロード時に既存のプロフィール情報を取得
 	useEffect(() => {
 		async function loadProfile() {
-			const supabase = createClient();
-
 			try {
 				const {
 					data: { user },
@@ -30,7 +30,7 @@ export default function ProfileSetup() {
 
 				if (error || !user) {
 					console.error("ユーザー取得エラー:", error);
-					setLoading(false);
+					router.push("/login");
 					return;
 				}
 
@@ -50,7 +50,7 @@ export default function ProfileSetup() {
 		}
 
 		loadProfile();
-	}, []);
+	}, [router, supabase]);
 
 	const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -63,29 +63,21 @@ export default function ProfileSetup() {
 		}
 	};
 
+	// ローディング中の表示
 	if (loading) {
 		return (
 			<div className='min-h-screen bg-gradient-to-br from-zinc-50 to-white flex items-center justify-center p-6'>
-				<div className='text-zinc-600'>読み込み中...</div>
+				<div className='text-zinc-600 text-lg'>
+					プロフィール情報を読み込み中...
+				</div>
 			</div>
 		);
 	}
 
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-zinc-50 to-white flex items-center justify-center p-6'>
-			{/* Back Button */}
-
 			<Card className='w-full max-w-md border-0 shadow-2xl bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden'>
 				<CardHeader className='text-center pt-12'>
-					<Button
-						onClick={() => router.back()}
-						variant='ghost'
-						size='sm'
-						className='fixed top-6 left-6 z-10 bg-white/80 backdrop-blur-sm hover:bg-white/90 border border-zinc-200 '
-					>
-						<ArrowLeft className='w-4 h-4 mr-2' />
-						戻る
-					</Button>
 					<div className='inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-zinc-900 to-zinc-700 rounded-full mb-6 shadow-lg mx-auto'>
 						<User className='w-10 h-10 text-white' />
 					</div>
@@ -188,13 +180,14 @@ export default function ProfileSetup() {
 
 					{/* Skip Option */}
 					<div className='mt-6 text-center'>
-						<button
-							type='button'
-							className='text-zinc-600 hover:text-zinc-900 font-light transition-colors duration-200 text-sm underline'
-							onClick={() => (window.location.href = "/")}
-						>
-							後で設定する
-						</button>
+						<form action={skipProfileSetup}>
+							<button
+								type='submit'
+								className='text-zinc-600 hover:text-zinc-900 font-light transition-colors duration-200 text-sm underline'
+							>
+								後で設定する
+							</button>
+						</form>
 					</div>
 				</CardContent>
 			</Card>

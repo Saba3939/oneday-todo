@@ -7,8 +7,47 @@ import Link from "next/link";
 import { Lock, LogIn, Mail } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { login } from "./action";
+import { createClient } from "@/utils/supabase/client";
+import { useState, useEffect } from "react";
 
 export default function Login() {
+	const [error, setError] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
+	const supabase = createClient();
+
+	// URLパラメータからエラーを取得
+	useEffect(() => {
+		const urlParams = new URLSearchParams(window.location.search);
+		const errorParam = urlParams.get("error");
+		const messageParam = urlParams.get("message");
+		if (errorParam) {
+			setError(messageParam || errorParam);
+		}
+	}, []);
+
+	const handleGoogleLogin = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			const { error: authError } = await supabase.auth.signInWithOAuth({
+				provider: "google",
+				options: {
+					redirectTo: `${window.location.origin}/auth/callback`,
+				},
+			});
+
+			if (authError) {
+				setError("Googleログインに失敗しました: " + authError.message);
+			}
+		} catch (err) {
+			console.error("Googleログインエラー:", err);
+			setError("予期しないエラーが発生しました");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-zinc-50 to-white flex items-center justify-center p-6'>
 			<Card className='w-full max-w-md border-0 shadow-2xl bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden'>
@@ -24,6 +63,14 @@ export default function Login() {
 					</p>
 				</CardHeader>
 				<CardContent className='p-8'>
+					{/* エラーメッセージ表示 */}
+					{error && (
+						<div className='mb-6 p-4 bg-red-50 border border-red-200 rounded-lg'>
+							<p className='text-sm text-red-600'>{error}</p>
+						</div>
+					)}
+
+					{/* Email/Password Login Form */}
 					<form action={login} className='space-y-6'>
 						{/* Email Input */}
 						<div>
@@ -38,7 +85,7 @@ export default function Login() {
 									name='email'
 									placeholder='メールアドレス'
 									required
-									className='w-full pl-10 pr-4 py-3 border border-zinc-200  bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-0 focus-visible:ring-0 focus:outline-none transition-all duration-300 font-light'
+									className='w-full pl-10 pr-4 py-3 border border-zinc-200 bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-0 focus-visible:ring-0 focus:outline-none transition-all duration-300 font-light'
 								/>
 							</div>
 						</div>
@@ -56,28 +103,39 @@ export default function Login() {
 									placeholder='パスワード'
 									name='password'
 									required
-									className='w-full pl-10 pr-4 py-3 border border-zinc-200  bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-0 focus-visible:ring-0 focus:outline-none transition-all duration-300 font-light'
+									className='w-full pl-10 pr-4 py-3 border border-zinc-200 bg-zinc-50/50 text-zinc-800 placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-0 focus-visible:ring-0 focus:outline-none transition-all duration-300 font-light'
 								/>
 							</div>
 						</div>
 
-						{/* Error Message */}
-
-						{/* Login Button */}
+						{/* Email/Password Login Button */}
 						<Button
 							type='submit'
 							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg'
 						>
 							ログイン
 						</Button>
-						<Button
-							type='submit'
-							className='w-full  bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg'
-						>
-							<FcGoogle className='w-4 h-4 mr-2' />
-							Googleでログイン
-						</Button>
 					</form>
+
+					{/* Divider */}
+					<div className='my-6 flex items-center'>
+						<div className='flex-1 border-t border-zinc-200'></div>
+						<span className='px-4 text-sm text-zinc-500 font-light'>
+							または
+						</span>
+						<div className='flex-1 border-t border-zinc-200'></div>
+					</div>
+
+					{/* Google Login Button */}
+					<Button
+						onClick={handleGoogleLogin}
+						disabled={loading}
+						variant='outline'
+						className='w-full border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-800 px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-sm hover:shadow-md text-lg'
+					>
+						<FcGoogle className='w-5 h-5 mr-3' />
+						{loading ? "処理中..." : "Googleでログイン"}
+					</Button>
 
 					{/* Forgot Password / Sign Up Links */}
 					<div className='mt-8 text-center text-sm'>
