@@ -4,16 +4,42 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@radix-ui/react-checkbox";
-import { Calendar, Play, Plus, Trash2, User, LogOut } from "lucide-react";
+import {
+	Calendar,
+	Play,
+	Plus,
+	Trash2,
+	User,
+	LogOut,
+	GripVertical,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import {
+	DndContext,
+	closestCenter,
+	KeyboardSensor,
+	PointerSensor,
+	useSensor,
+	useSensors,
+	DragEndEvent,
+} from "@dnd-kit/core";
+import {
+	arrayMove,
+	SortableContext,
+	sortableKeyboardCoordinates,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Task {
 	id: string;
 	text: string;
 	completed: boolean;
 }
+
 interface UserProfile {
 	id: string;
 	email: string;
@@ -21,8 +47,100 @@ interface UserProfile {
 	displayName: string;
 	avatarUrl: string;
 }
+
 interface TodoAppProps {
 	user: UserProfile;
+}
+
+// ソート可能なタスクアイテムコンポーネント
+function SortableTaskItem({
+	task,
+	onToggle,
+	onDelete,
+}: {
+	task: Task;
+	onToggle: (id: string) => void;
+	onDelete: (id: string) => void;
+}) {
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({ id: task.id });
+
+	const style = {
+		transform: CSS.Transform.toString(transform),
+		transition,
+		opacity: isDragging ? 0.5 : 1,
+	};
+
+	return (
+		<Card
+			ref={setNodeRef}
+			style={style}
+			className='group border-0 bg-white/60 backdrop-blur-sm hover:bg-white/80 transition-all duration-300 rounded-2xl shadow-sm hover:shadow-lg'
+		>
+			<CardContent>
+				<div className='flex items-center gap-2'>
+					{/* Drag Handle */}
+					<button
+						{...attributes}
+						{...listeners}
+						className='cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 transition-colors p-1'
+						title='ドラッグして並び替え'
+					>
+						<GripVertical className='w-4 h-4' />
+					</button>
+
+					{/* Checkbox */}
+					<Checkbox
+						id={task.id}
+						checked={task.completed}
+						onCheckedChange={() => onToggle(task.id)}
+						className='w-6 h-6 border-2 border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900 rounded-lg transition-all duration-300'
+					/>
+
+					{/* Task text */}
+					<label
+						htmlFor={task.id}
+						className={`flex-1 text-lg cursor-pointer transition-all duration-300 font-light ${
+							task.completed
+								? "line-through text-gray-400"
+								: "text-gray-800 hover:text-gray-600"
+						}`}
+					>
+						{task.text}
+					</label>
+
+					{/* Action buttons - only visible on hover */}
+					<div className='flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300'>
+						<Link href={`/pomodoro?task=${encodeURIComponent(task.text)}`}>
+							<Button
+								variant='ghost'
+								size='sm'
+								className='h-10 w-10 p-0 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-300'
+								title='ポモドーロタイマーを開始'
+							>
+								<Play className='w-4 h-4' />
+							</Button>
+						</Link>
+						<Button
+							variant='ghost'
+							size='sm'
+							className='h-10 w-10 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300'
+							onClick={() => onDelete(task.id)}
+							title='タスクを削除'
+						>
+							<Trash2 className='w-4 h-4' />
+						</Button>
+					</div>
+				</div>
+			</CardContent>
+		</Card>
+	);
 }
 
 export default function TodoApp({ user }: TodoAppProps) {
@@ -30,6 +148,14 @@ export default function TodoApp({ user }: TodoAppProps) {
 	const [newTask, setNewTask] = useState("");
 	const [showUserMenu, setShowUserMenu] = useState(false);
 	const router = useRouter();
+
+	// DnD sensors
+	const sensors = useSensors(
+		useSensor(PointerSensor),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates,
+		})
+	);
 
 	// メニューの外側をクリックした時に閉じる
 	useEffect(() => {
@@ -60,6 +186,7 @@ export default function TodoApp({ user }: TodoAppProps) {
 		}
 		setShowUserMenu(false);
 	};
+
 	const getCurrentDate = () => {
 		const today = new Date();
 		const year = today.getFullYear();
@@ -109,6 +236,7 @@ export default function TodoApp({ user }: TodoAppProps) {
 		]);
 		setNewTask("");
 	};
+
 	const toggleTask = (id: string) => {
 		setTasks(
 			tasks.map((task) =>
@@ -119,6 +247,19 @@ export default function TodoApp({ user }: TodoAppProps) {
 
 	const deleteTask = (id: string) => {
 		setTasks(tasks.filter((task) => task.id !== id));
+	};
+
+	const handleDragEnd = (event: DragEndEvent) => {
+		const { active, over } = event;
+
+		if (active.id !== over?.id) {
+			setTasks((items) => {
+				const oldIndex = items.findIndex((item) => item.id === active.id);
+				const newIndex = items.findIndex((item) => item.id === over?.id);
+
+				return arrayMove(items, oldIndex, newIndex);
+			});
+		}
 	};
 
 	return (
@@ -212,12 +353,10 @@ export default function TodoApp({ user }: TodoAppProps) {
 							)}
 						</div>
 					</div>
-
-					{/* Decorative Line */}
 				</div>
 
 				{/* Add task section */}
-				<div className='mb-16'>
+				<div className='mb-8'>
 					<div className='space-y-4 md:space-y-0 md:relative'>
 						<form action={addTask}>
 							{/* Input field with responsive padding */}
@@ -253,62 +392,27 @@ export default function TodoApp({ user }: TodoAppProps) {
 							</p>
 						</div>
 					) : (
-						tasks.map((task, index) => (
-							<Card
-								key={task.id}
-								className='group border-0 bg-white/60 backdrop-blur-sm hover:bg-white/80 transition-all duration-300 rounded-2xl shadow-sm hover:shadow-lg'
-								style={{ animationDelay: `${index * 50}ms` }}
+						<DndContext
+							sensors={sensors}
+							collisionDetection={closestCenter}
+							onDragEnd={handleDragEnd}
+						>
+							<SortableContext
+								items={tasks.map((task) => task.id)}
+								strategy={verticalListSortingStrategy}
 							>
-								<CardContent className='p-8'>
-									<div className='flex items-center gap-6'>
-										{/* Checkbox */}
-										<Checkbox
-											id={task.id}
-											checked={task.completed}
-											onCheckedChange={() => toggleTask(task.id)}
-											className='w-6 h-6 border-2 border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:border-gray-900 rounded-lg transition-all duration-300'
+								<div className='space-y-2'>
+									{tasks.map((task) => (
+										<SortableTaskItem
+											key={task.id}
+											task={task}
+											onToggle={toggleTask}
+											onDelete={deleteTask}
 										/>
-
-										{/* Task text */}
-										<label
-											htmlFor={task.id}
-											className={`flex-1 text-lg cursor-pointer transition-all duration-300 font-light ${
-												task.completed
-													? "line-through text-gray-400"
-													: "text-gray-800 hover:text-gray-600"
-											}`}
-										>
-											{task.text}
-										</label>
-
-										{/* Action buttons - only visible on hover */}
-										<div className='flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300'>
-											<Link
-												href={`/pomodoro?task=${encodeURIComponent(task.text)}`}
-											>
-												<Button
-													variant='ghost'
-													size='sm'
-													className='h-10 w-10 p-0 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all duration-300'
-													title='ポモドーロタイマーを開始'
-												>
-													<Play className='w-4 h-4' />
-												</Button>
-											</Link>
-											<Button
-												variant='ghost'
-												size='sm'
-												className='h-10 w-10 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300'
-												onClick={() => deleteTask(task.id)}
-												title='タスクを削除'
-											>
-												<Trash2 className='w-4 h-4' />
-											</Button>
-										</div>
-									</div>
-								</CardContent>
-							</Card>
-						))
+									))}
+								</div>
+							</SortableContext>
+						</DndContext>
 					)}
 				</div>
 

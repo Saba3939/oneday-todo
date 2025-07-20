@@ -21,6 +21,26 @@ export async function login(formData: FormData) {
 		redirect("/error");
 	}
 
+	// ログイン成功後、ユーザー情報を取得してプロフィール状態をチェック
+	const {
+		data: { user },
+		error: userError,
+	} = await supabase.auth.getUser();
+
+	if (userError || !user) {
+		redirect("/error");
+	}
+
+	// プロフィールが設定済みかチェック
+	const hasProfile =
+		user.user_metadata?.username || user.user_metadata?.display_name;
+
 	revalidatePath("/", "layout");
-	redirect("/profile-setup");
+
+	// プロフィールが未設定の場合のみプロフィール設定ページにリダイレクト
+	if (!hasProfile) {
+		redirect("/profile-setup");
+	} else {
+		redirect("/");
+	}
 }
