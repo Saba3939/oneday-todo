@@ -118,6 +118,20 @@ export async function updateProfile(formData: FormData) {
 		},
 	});
 
+	const { error: profileError } = await supabase.from("profiles").upsert({
+		id: user.id,
+		username: username,
+		display_name: displayName || username,
+		avatar_url: avatarUrl,
+		is_premium: false,
+	});
+
+	if (updateError || profileError) {
+		console.error("プロフィール更新エラー:", updateError || profileError);
+		redirect("/error");
+		return;
+	}
+
 	if (updateError) {
 		console.error("プロフィール更新エラー:", updateError);
 		redirect("/error");
@@ -153,7 +167,6 @@ export async function skipProfileSetup() {
 		data: {
 			username: username,
 			display_name: displayName,
-			profile_skipped: true, // スキップしたことを記録
 		},
 	});
 
