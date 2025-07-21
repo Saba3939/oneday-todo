@@ -31,6 +31,12 @@ export async function login(formData: FormData) {
 		redirect("/error");
 	}
 
+	// --- ここからlast_login_atの更新 ---
+	// await supabase.from("profiles").update({
+	// 	last_login_at: new Date().toISOString(),
+	// }).eq("id", user.id);
+	// --- ここまでlast_login_atの更新 ---
+
 	// プロフィールが設定済みかチェック
 	const hasProfile =
 		user.user_metadata?.username || user.user_metadata?.display_name;

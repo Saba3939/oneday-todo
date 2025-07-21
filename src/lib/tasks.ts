@@ -112,18 +112,17 @@ export async function deleteTask(id: string): Promise<void> {
 		error: userError,
 	} = await supabase.auth.getUser();
 	if (userError || !user) {
-		throw new Error("認証エラー");
+		throw new Error("ユーザー取得エラー:");
 	}
-
+	// Supabaseのtasksテーブルから物理削除
 	const { error } = await supabase
 		.from("tasks")
 		.delete()
 		.eq("id", id)
 		.eq("user_id", user.id);
-
 	if (error) {
 		console.error("タスク削除エラー:", error);
-		throw new Error("タスクの削除に失敗しました");
+		throw new Error("タスク削除エラー:");
 	}
 }
 
@@ -206,4 +205,51 @@ export async function updateTaskOrderEfficient(
 		console.error("タスク順序更新エラー:", error);
 		throw new Error("タスクの順序更新に失敗しました");
 	}
+}
+
+// 指定日（YYYY-MM-DD）のタスク一覧を取得
+export async function getTasksByDate(date: string): Promise<Task[]> {
+	const supabase = await createClient();
+	const {
+		data: { user },
+		error: userError,
+	} = await supabase.auth.getUser();
+	if (userError || !user) {
+		throw new Error("ユーザー取得エラー:");
+	}
+	// created_atの日付部分が一致するタスクを取得
+	const { data: tasks, error: tasksError } = await supabase
+		.from("tasks")
+		.select("*")
+		.eq("user_id", user.id)
+		.gte("created_at", `${date}T00:00:00+00:00`)
+		.lt("created_at", `${date}T23:59:59+00:00`)
+		.order("order_index", { ascending: true });
+	if (tasksError) {
+		throw new Error("タスク取得エラー:");
+	}
+	return tasks || [];
+}
+
+// 指定日（YYYY-MM-DD）より前の全タスクを取得
+export async function getTasksBeforeDate(date: string): Promise<Task[]> {
+	const supabase = await createClient();
+	const {
+		data: { user },
+		error: userError,
+	} = await supabase.auth.getUser();
+	if (userError || !user) {
+		throw new Error("ユーザー取得エラー:");
+	}
+	// created_atが指定日より前のタスクを取得
+	const { data: tasks, error: tasksError } = await supabase
+		.from("tasks")
+		.select("*")
+		.eq("user_id", user.id)
+		.lt("created_at", `${date}T00:00:00+00:00`)
+		.order("order_index", { ascending: true });
+	if (tasksError) {
+		throw new Error("タスク取得エラー:");
+	}
+	return tasks || [];
 }
