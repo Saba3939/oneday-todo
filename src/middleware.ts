@@ -1,8 +1,7 @@
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
-export const runtime = "experimental-edge";
-
+export const dynamic = "force-dynamic";
 export async function middleware(request: NextRequest) {
 	return await updateSession(request);
 }

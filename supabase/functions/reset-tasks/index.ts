@@ -19,10 +19,7 @@ Deno.serve(async (req) => {
 		);
 
 		// `tasks`テーブルから、タスクを全て削除（未完了のタスクのみ）
-		const { error } = await supabaseAdmin
-			.from("tasks")
-			.delete()
-			.neq("id", -1); // 全件削除のために常に真となる条件を使用
+		const { error } = await supabaseAdmin.from("tasks").delete().neq("id", -1); // 全件削除のために常に真となる条件を使用
 
 		if (error) {
 			throw error;

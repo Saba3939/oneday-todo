@@ -33,5 +33,14 @@ export default async function Home() {
 		avatarUrl: user.user_metadata?.avatar_url || "",
 	};
 
-	return <TodoApp user={userProfile} />;
+	// profilesテーブルからlast_login_atを取得
+	const { data: profileRow } = await supabase
+		.from("profiles")
+		.select("last_login_at")
+		.eq("id", user.id)
+		.single();
+	console.log(profileRow);
+	const lastLoginAt = profileRow?.last_login_at || null;
+
+	return <TodoApp user={userProfile} lastLoginAt={lastLoginAt} />;
 }
