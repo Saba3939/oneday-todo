@@ -8,23 +8,12 @@ import { Lock, Mail, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { signup } from "./action";
 import { createClient } from "@/utils/supabase/client";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 export default function Signup() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const supabase = createClient();
-	const searchParams = useSearchParams();
-
-	// URLパラメータからエラーを取得
-	useEffect(() => {
-		const errorParam = searchParams.get("error");
-		const messageParam = searchParams.get("message");
-		if (errorParam && messageParam) {
-			setError(messageParam);
-		}
-	}, [searchParams]);
 
 	const handleGoogleSignup = async () => {
 		try {
