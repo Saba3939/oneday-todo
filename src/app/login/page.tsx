@@ -63,16 +63,13 @@ export default function Login() {
 					</p>
 				</CardHeader>
 				<CardContent className='p-8'>
-					{/* エラーメッセージ表示 */}
 					{error && (
 						<div className='mb-6 p-4 bg-red-50 border border-red-200 rounded-lg'>
 							<p className='text-sm text-red-600'>{error}</p>
 						</div>
 					)}
 
-					{/* Email/Password Login Form */}
 					<form action={login} className='space-y-6'>
-						{/* Email Input */}
 						<div>
 							<Label htmlFor='email' className='sr-only'>
 								メールアドレス
@@ -90,7 +87,6 @@ export default function Login() {
 							</div>
 						</div>
 
-						{/* Password Input */}
 						<div>
 							<Label htmlFor='password' className='sr-only'>
 								パスワード
@@ -108,7 +104,6 @@ export default function Login() {
 							</div>
 						</div>
 
-						{/* Email/Password Login Button */}
 						<Button
 							type='submit'
 							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg'
@@ -117,7 +112,6 @@ export default function Login() {
 						</Button>
 					</form>
 
-					{/* Divider */}
 					<div className='my-6 flex items-center'>
 						<div className='flex-1 border-t border-zinc-200'></div>
 						<span className='px-4 text-sm text-zinc-500 font-light'>
@@ -126,7 +120,6 @@ export default function Login() {
 						<div className='flex-1 border-t border-zinc-200'></div>
 					</div>
 
-					{/* Google Login Button */}
 					<Button
 						onClick={handleGoogleLogin}
 						disabled={loading}
@@ -137,7 +130,6 @@ export default function Login() {
 						{loading ? "処理中..." : "Googleでログイン"}
 					</Button>
 
-					{/* Forgot Password / Sign Up Links */}
 					<div className='mt-8 text-center text-sm'>
 						<Link
 							href='#'

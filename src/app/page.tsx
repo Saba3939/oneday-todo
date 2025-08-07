@@ -42,5 +42,9 @@ export default async function Home() {
 	console.log(profileRow);
 	const lastLoginAt = profileRow?.last_login_at || null;
 
-	return <TodoApp user={userProfile} lastLoginAt={lastLoginAt} />;
+	return (
+		<>
+			<TodoApp user={userProfile} lastLoginAt={lastLoginAt} />
+		</>
+	);
 }
