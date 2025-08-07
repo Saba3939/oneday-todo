@@ -9,19 +9,25 @@ import { FcGoogle } from "react-icons/fc";
 import { login } from "./action";
 import { createClient } from "@/utils/supabase/client";
 import { useState, useEffect } from "react";
+import AuthSuccessNotification from "@/components/AuthSuccessNotification";
 
 export default function Login() {
 	const [error, setError] = useState<string | null>(null);
+	const [message, setMessage] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const supabase = createClient();
 
-	// URLパラメータからエラーを取得
+	// URLパラメータからエラーやメッセージを取得
 	useEffect(() => {
 		const urlParams = new URLSearchParams(window.location.search);
 		const errorParam = urlParams.get("error");
 		const messageParam = urlParams.get("message");
+
 		if (errorParam) {
 			setError(messageParam || errorParam);
+		} else if (messageParam) {
+			// エラーではない一般的なメッセージ（メール確認通知など）
+			setMessage(messageParam);
 		}
 	}, []);
 
@@ -50,6 +56,7 @@ export default function Login() {
 
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-zinc-50 to-white flex items-center justify-center p-6'>
+			<AuthSuccessNotification />
 			<Card className='w-full max-w-md border-0 shadow-2xl bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden'>
 				<CardHeader className='text-center pt-12'>
 					<div className='inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-zinc-900 to-zinc-700 rounded-full mb-6 shadow-lg mx-auto'>
@@ -66,6 +73,12 @@ export default function Login() {
 					{error && (
 						<div className='mb-6 p-4 bg-red-50 border border-red-200 rounded-lg'>
 							<p className='text-sm text-red-600'>{error}</p>
+						</div>
+					)}
+
+					{message && (
+						<div className='mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg'>
+							<p className='text-sm text-blue-600'>{message}</p>
 						</div>
 					)}
 

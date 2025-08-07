@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import TodoApp from "@/components/TodoApp"; // クライアントコンポーネントとして分離
+import AuthSuccessNotification from "@/components/AuthSuccessNotification";
 
 export default async function Home() {
 	const supabase = await createClient();

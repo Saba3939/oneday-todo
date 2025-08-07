@@ -18,16 +18,54 @@ export async function signup(formData: FormData) {
 
 	// パスワードの確認
 	if (data.password !== data.confirmPassword) {
-		redirect("/error");
+		redirect(
+			"/signup?error=password_mismatch&message=" +
+				encodeURIComponent("パスワードが一致しません")
+		);
 	}
 
-	const { error } = await supabase.auth.signUp({
+	const { data: signUpData, error } = await supabase.auth.signUp({
 		email: data.email,
 		password: data.password,
 	});
 
 	if (error) {
-		redirect("/error");
+		// ユーザー側のエラー（バリデーションエラーなど）はサインアップページで表示
+		if (
+			error.message.includes("Password") ||
+			error.message.includes("password") ||
+			error.message.includes("パスワード") ||
+			error.message.includes("weak") ||
+			error.message.includes("短") ||
+			error.message.includes("Email") ||
+			error.message.includes("email") ||
+			error.message.includes("メール") ||
+			error.message.includes("invalid") ||
+			error.message.includes("format") ||
+			error.message.includes("already") ||
+			error.message.includes("exists") ||
+			error.message.includes("既に")
+		) {
+			redirect(
+				"/signup?error=validation_error&message=" +
+					encodeURIComponent(error.message)
+			);
+		} else {
+			// システムエラーはエラーページにリダイレクト
+			redirect(
+				"/error?error=signup_failed&message=" +
+					encodeURIComponent(error.message)
+			);
+		}
+	}
+
+	// メール確認が必要な場合の処理
+	if (signUpData.user && !signUpData.session) {
+		// メール確認が必要な場合
+		redirect(
+			"/login?message=" +
+				encodeURIComponent("確認メールを送信しました。メールをご確認ください。")
+		);
 	}
 
 	revalidatePath("/", "layout");
