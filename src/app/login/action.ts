@@ -18,7 +18,29 @@ export async function login(formData: FormData) {
 	const { error } = await supabase.auth.signInWithPassword(data);
 
 	if (error) {
-		redirect("/error");
+		// ユーザー側のエラー（認証情報の間違いなど）はログインページで表示
+		if (
+			error.message.includes("Invalid") ||
+			error.message.includes("invalid") ||
+			error.message.includes("incorrect") ||
+			error.message.includes("wrong") ||
+			error.message.includes("not found") ||
+			error.message.includes("認証") ||
+			error.message.includes("パスワード") ||
+			error.message.includes("メール") ||
+			error.message.includes("存在") ||
+			error.message.includes("間違") ||
+			error.message.includes("credentials")
+		) {
+			redirect(
+				"/login?error=auth_error&message=" + encodeURIComponent(error.message)
+			);
+		} else {
+			// システムエラーはエラーページにリダイレクト
+			redirect(
+				"/error?error=login_failed&message=" + encodeURIComponent(error.message)
+			);
+		}
 	}
 
 	// ログイン成功後、ユーザー情報を取得してプロフィール状態をチェック
@@ -28,7 +50,10 @@ export async function login(formData: FormData) {
 	} = await supabase.auth.getUser();
 
 	if (userError || !user) {
-		redirect("/error");
+		redirect(
+			"/error?error=user_fetch_failed&message=" +
+				encodeURIComponent("ユーザー情報の取得に失敗しました")
+		);
 	}
 
 	// --- ここからlast_login_atの更新 ---

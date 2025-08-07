@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import TodoApp from "@/components/TodoApp"; // クライアントコンポーネントとして分離
+import AuthSuccessNotification from "@/components/AuthSuccessNotification";
 
 export default async function Home() {
 	const supabase = await createClient();
@@ -42,5 +43,9 @@ export default async function Home() {
 	console.log(profileRow);
 	const lastLoginAt = profileRow?.last_login_at || null;
 
-	return <TodoApp user={userProfile} lastLoginAt={lastLoginAt} />;
+	return (
+		<>
+			<TodoApp user={userProfile} lastLoginAt={lastLoginAt} />
+		</>
+	);
 }

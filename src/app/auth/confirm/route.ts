@@ -18,11 +18,20 @@ export async function GET(request: NextRequest) {
 			token_hash,
 		});
 		if (!error) {
-			// redirect user to specified redirect URL or root of app
-			redirect(next);
+			// 認証成功時に成功メッセージ付きでリダイレクト
+			const successUrl = new URL(next, request.url);
+			successUrl.searchParams.set("auth_success", "true");
+			successUrl.searchParams.set(
+				"message",
+				encodeURIComponent("メール認証が完了しました！")
+			);
+			redirect(successUrl.toString());
 		}
 	}
 
 	// redirect the user to an error page with some instructions
-	redirect("/error");
+	redirect(
+		"/error?error=auth_confirm_failed&message=" +
+			encodeURIComponent("認証リンクが無効または期限切れです")
+	);
 }
