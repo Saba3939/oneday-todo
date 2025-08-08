@@ -29,7 +29,7 @@ export default function ProfileSetup() {
 				} = await supabase.auth.getUser();
 
 				if (error || !user) {
-					console.error("ユーザー取得エラー:", error);
+					// ユーザー取得に失敗
 					router.push("/login");
 					return;
 				}
@@ -42,8 +42,8 @@ export default function ProfileSetup() {
 						setSelectedImage(user.user_metadata.avatar_url);
 					}
 				}
-			} catch (error) {
-				console.error("プロフィール読み込みエラー:", error);
+			} catch {
+				// プロフィール読み込みに失敗
 			} finally {
 				setLoading(false);
 			}

@@ -40,11 +40,11 @@ export default async function Home() {
 		.select("last_login_at")
 		.eq("id", user.id)
 		.single();
-	console.log(profileRow);
 	const lastLoginAt = profileRow?.last_login_at || null;
 
 	return (
 		<>
+			<AuthSuccessNotification />
 			<TodoApp user={userProfile} lastLoginAt={lastLoginAt} />
 		</>
 	);
