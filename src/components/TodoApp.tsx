@@ -6,14 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Calendar,
-	Play,
 	Plus,
 	Trash2,
 	User,
 	LogOut,
 	GripVertical,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
@@ -45,7 +43,6 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-	DialogDescription,
 	DialogFooter,
 	DialogClose,
 } from "@/components/ui/dialog";
@@ -137,18 +134,8 @@ function SortableTaskItem({
 						{task.content}
 					</label>
 
-					{/* Action buttons - スマホでは常に表示、デスクトップではホバーで表示 */}
-					<div className='flex gap-1 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300'>
-						<Link href={`/pomodoro?task=${encodeURIComponent(task.content)}`}>
-							<Button
-								variant='ghost'
-								size='sm'
-								className='h-6 w-6 sm:h-8 sm:w-8 p-0 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-all duration-300'
-								title='ポモドーロタイマーを開始'
-							>
-								<Play className='w-2.5 h-2.5 sm:w-3 sm:h-3' />
-							</Button>
-						</Link>
+					{/* Delete button - スマホでは常に表示、デスクトップではホバーで表示 */}
+					<div className='sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300'>
 						<Button
 							variant='ghost'
 							size='sm'
@@ -186,6 +173,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		new Set()
 	);
 	const [deletedPrevTasks, setDeletedPrevTasks] = useState(false);
+	const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
 	const router = useRouter();
 
 	// DnD sensors
@@ -228,6 +216,11 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		const today = new Date();
 		const todayStr = toJstDateString(today);
 		const lastLoginStr = lastLoginAt ? toJstDateString(lastLoginAt) : null;
+
+		// 初回ユーザーかどうかを判定（lastLoginAtがnullまたはundefined）
+		const isFirstUser = !lastLoginAt;
+		setIsFirstTimeUser(isFirstUser);
+
 		if (lastLoginStr !== todayStr) {
 			// 今日より前の全タスクを取得
 			import("@/lib/tasks").then(({ getTasksBeforeDate }) => {
@@ -462,11 +455,36 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>前日のタスクを引き継ぎますか？</DialogTitle>
-						<DialogDescription>
-							前日（{prevDayTasks[0]?.created_at?.slice(0, 10) || "-"}
-							）のタスクを今日に引き継ぐか選択してください。
-						</DialogDescription>
 					</DialogHeader>
+					{/* 説明部分を独立して配置 */}
+					<div className='mb-4'>
+						{isFirstTimeUser ? (
+							<div className='space-y-3 text-sm'>
+								<div className='text-gray-600'>
+									<span className='font-medium text-blue-600'>
+										初回ログイン時の案内
+									</span>
+								</div>
+								<div>
+									このダイアログは、前日に未完了だったタスクを今日に引き継ぐかを選択する機能です。
+								</div>
+								<div>
+									✓ チェックが入ったタスクが今日に引き継がれます
+									<br />
+									✓ 不要なタスクのチェックを外すことで、引き継がずに削除できます
+									<br />✓ 今回は前日のタスクがないため、この画面は表示のみです
+								</div>
+								<div className='text-gray-500'>
+									明日以降のログイン時に、前日のタスクがあれば同様の選択画面が表示されます。
+								</div>
+							</div>
+						) : (
+							<div className='text-sm text-gray-600'>
+								前日（{prevDayTasks[0]?.created_at?.slice(0, 10) || "-"}
+								）のタスクを今日に引き継ぐか選択してください。
+							</div>
+						)}
+					</div>
 					{/* Dialog内のタスク選択リスト */}
 					<div className='space-y-2 max-h-60 overflow-y-auto'>
 						{prevDayTasks.map((task) => (
