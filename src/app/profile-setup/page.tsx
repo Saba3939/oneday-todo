@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar } from "@/components/ui/avatar";
 import { User, Upload, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
 import { updateProfile, skipProfileSetup } from "@/app/profile-setup/action";
 import { createClient } from "@/utils/supabase/client";
@@ -16,7 +16,7 @@ export default function ProfileSetup() {
 	const [username, setUsername] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const [loading, setLoading] = useState(true);
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isPending, startTransition] = useTransition();
 	const router = useRouter();
 	const supabase = createClient();
 
@@ -90,14 +90,11 @@ export default function ProfileSetup() {
 					</p>
 				</CardHeader>
 				<CardContent className='p-8'>
-					<form 
-						action={async (formData) => {
-							setIsSubmitting(true);
-							try {
+					<form
+						action={(formData) => {
+							startTransition(async () => {
 								await updateProfile(formData);
-							} finally {
-								setIsSubmitting(false);
-							}
+							});
 						}}
 						className='space-y-6'
 					>
@@ -182,34 +179,30 @@ export default function ProfileSetup() {
 						{/* Complete Setup Button */}
 						<Button
 							type='submit'
-							disabled={isSubmitting || loading}
+							disabled={isPending || loading}
 							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg disabled:opacity-50 disabled:cursor-not-allowed'
 						>
-							{isSubmitting ? (
-								<div className="w-5 h-5 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+							{isPending ? (
+								<div className='w-5 h-5 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent' />
 							) : (
 								<Check className='w-5 h-5 mr-2' />
 							)}
-							{isSubmitting ? '保存中...' : 'プロフィールを完了'}
+							{isPending ? "保存中..." : "プロフィールを完了"}
 						</Button>
 					</form>
 
 					{/* Skip Option */}
 					<div className='mt-6 text-center'>
-						<form 
-							action={async () => {
-								if (isSubmitting) return;
-								setIsSubmitting(true);
-								try {
+						<form
+							action={() => {
+								startTransition(async () => {
 									await skipProfileSetup();
-								} finally {
-									setIsSubmitting(false);
-								}
+								});
 							}}
 						>
 							<button
 								type='submit'
-								disabled={isSubmitting}
+								disabled={isPending}
 								className='text-zinc-600 hover:text-zinc-900 font-light transition-colors duration-200 text-sm underline disabled:opacity-50 disabled:cursor-not-allowed'
 							>
 								後で設定する
