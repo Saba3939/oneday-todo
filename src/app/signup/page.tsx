@@ -8,12 +8,22 @@ import { Lock, Mail, User } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { signup } from "./action";
 import { createClient } from "@/utils/supabase/client";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function Signup() {
+function SignupInner() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const supabase = createClient();
+	const searchParams = useSearchParams();
+
+	useEffect(() => {
+		const errorParam = searchParams.get("error");
+		const messageParam = searchParams.get("message");
+		if (errorParam && messageParam) {
+			setError(messageParam);
+		}
+	}, [searchParams]);
 
 	const handleGoogleSignup = async () => {
 		try {
@@ -148,5 +158,31 @@ export default function Signup() {
 				</CardContent>
 			</Card>
 		</div>
+	);
+}
+
+export default function Signup() {
+	return (
+		<Suspense
+			fallback={
+				<div className='min-h-screen bg-gradient-to-br from-zinc-50 to-white flex items-center justify-center p-6'>
+					<div className='w-full max-w-md border-0 shadow-2xl bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden p-8'>
+						<div className='text-center'>
+							<div className='inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-zinc-900 to-zinc-700 rounded-full mb-6 shadow-lg mx-auto'>
+								<User className='w-10 h-10 text-white' />
+							</div>
+							<h1 className='text-4xl font-extralight text-zinc-900 tracking-wide mb-2'>
+								サインアップ
+							</h1>
+							<p className='text-zinc-600 font-light text-lg'>
+								新しいアカウントを作成
+							</p>
+						</div>
+					</div>
+				</div>
+			}
+		>
+			<SignupInner />
+		</Suspense>
 	);
 }

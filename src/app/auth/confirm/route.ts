@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
 	const type = searchParams.get("type") as EmailOtpType | null;
 	const next = searchParams.get("next") ?? "/";
 
+
 	if (token_hash && type) {
 		const supabase = await createClient();
 
@@ -17,6 +18,8 @@ export async function GET(request: NextRequest) {
 			type,
 			token_hash,
 		});
+
+
 		if (!error) {
 			// 認証成功時に成功メッセージ付きでリダイレクト
 			const successUrl = new URL(next, request.url);
@@ -26,7 +29,9 @@ export async function GET(request: NextRequest) {
 				encodeURIComponent("メール認証が完了しました！")
 			);
 			redirect(successUrl.toString());
+		} else {
 		}
+	} else {
 	}
 
 	// redirect the user to an error page with some instructions

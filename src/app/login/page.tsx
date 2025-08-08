@@ -46,9 +46,9 @@ export default function Login() {
 			if (authError) {
 				setError("Googleログインに失敗しました: " + authError.message);
 			}
-		} catch (err) {
-			console.error("Googleログインエラー:", err);
-			setError("予期しないエラーが発生しました");
+		} catch (error) {
+			// Googleログインエラーが発生
+			setError("予期しないエラーが発生しました: " + error);
 		} finally {
 			setLoading(false);
 		}

@@ -22,8 +22,8 @@ async function deleteOldAvatar(
 			const filePath = pathMatch[1];
 			await supabase.storage.from("avatars").remove([filePath]);
 		}
-	} catch (error) {
-		console.error("古いアバター削除エラー:", error);
+	} catch {
+		// 古いアバター削除に失敗しても処理を継続
 		// エラーが発生しても処理を継続
 	}
 }
@@ -71,14 +71,12 @@ export async function updateProfile(formData: FormData) {
 			];
 
 			if (avatar.size > maxSize) {
-				console.error("ファイルサイズが大きすぎます");
-				redirect("/error");
+				redirect("/error?message=" + encodeURIComponent("ファイルサイズが大きすぎます"));
 				return;
 			}
 
 			if (!allowedTypes.includes(avatar.type)) {
-				console.error("許可されていないファイル形式です");
-				redirect("/error");
+				redirect("/error?message=" + encodeURIComponent("許可されていないファイル形式です"));
 				return;
 			}
 
@@ -91,8 +89,7 @@ export async function updateProfile(formData: FormData) {
 				});
 
 			if (uploadError) {
-				console.error("アバターアップロードエラー:", uploadError);
-				redirect("/error");
+				redirect("/error?message=" + encodeURIComponent("アバターのアップロードに失敗しました"));
 				return;
 			}
 
@@ -102,9 +99,8 @@ export async function updateProfile(formData: FormData) {
 				.getPublicUrl(filePath);
 
 			avatarUrl = urlData.publicUrl;
-		} catch (error) {
-			console.error("アバター処理エラー:", error);
-			redirect("/error");
+		} catch {
+			redirect("/error?message=" + encodeURIComponent("アバターの処理中にエラーが発生しました"));
 			return;
 		}
 	}
@@ -127,14 +123,7 @@ export async function updateProfile(formData: FormData) {
 	});
 
 	if (updateError || profileError) {
-		console.error("プロフィール更新エラー:", updateError || profileError);
-		redirect("/error");
-		return;
-	}
-
-	if (updateError) {
-		console.error("プロフィール更新エラー:", updateError);
-		redirect("/error");
+		redirect("/error?message=" + encodeURIComponent("プロフィールの更新に失敗しました"));
 		return;
 	}
 
@@ -171,8 +160,7 @@ export async function skipProfileSetup() {
 	});
 
 	if (updateError) {
-		console.error("プロフィール更新エラー:", updateError);
-		redirect("/error");
+		redirect("/error?message=" + encodeURIComponent("プロフィールの更新に失敗しました"));
 		return;
 	}
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { CheckCircle, X } from "lucide-react";
 
-export default function AuthSuccessNotification() {
+function AuthSuccessNotificationInner() {
 	const searchParams = useSearchParams();
 	const [isVisible, setIsVisible] = useState(false);
 	const [message, setMessage] = useState("");
@@ -54,5 +54,13 @@ export default function AuthSuccessNotification() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export default function AuthSuccessNotification() {
+	return (
+		<Suspense fallback={null}>
+			<AuthSuccessNotificationInner />
+		</Suspense>
 	);
 }

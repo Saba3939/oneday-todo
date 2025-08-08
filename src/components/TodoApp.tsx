@@ -549,7 +549,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 									className='cursor-pointer'
 									onClick={() => setShowUserMenu(!showUserMenu)}
 								>
-									<Avatar className='drop-shadow-sm size-10 hover:ring-2 hover:ring-gray-300 transition-all duration-200'>
+									<Avatar className='border size-10 hover:ring-2 hover:ring-gray-300 transition-all duration-200'>
 										<AvatarImage src={user.avatarUrl} />
 										<AvatarFallback>
 											{user.displayName.charAt(0)}
