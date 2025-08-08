@@ -16,6 +16,7 @@ export default function ProfileSetup() {
 	const [username, setUsername] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const [loading, setLoading] = useState(true);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const router = useRouter();
 	const supabase = createClient();
 
@@ -89,7 +90,17 @@ export default function ProfileSetup() {
 					</p>
 				</CardHeader>
 				<CardContent className='p-8'>
-					<form action={updateProfile} className='space-y-6'>
+					<form 
+						action={async (formData) => {
+							setIsSubmitting(true);
+							try {
+								await updateProfile(formData);
+							} finally {
+								setIsSubmitting(false);
+							}
+						}}
+						className='space-y-6'
+					>
 						{/* Avatar Upload */}
 						<div className='flex flex-col items-center space-y-4'>
 							<div className='relative'>
@@ -171,19 +182,35 @@ export default function ProfileSetup() {
 						{/* Complete Setup Button */}
 						<Button
 							type='submit'
-							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg'
+							disabled={isSubmitting || loading}
+							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg disabled:opacity-50 disabled:cursor-not-allowed'
 						>
-							<Check className='w-5 h-5 mr-2' />
-							プロフィールを完了
+							{isSubmitting ? (
+								<div className="w-5 h-5 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+							) : (
+								<Check className='w-5 h-5 mr-2' />
+							)}
+							{isSubmitting ? '保存中...' : 'プロフィールを完了'}
 						</Button>
 					</form>
 
 					{/* Skip Option */}
 					<div className='mt-6 text-center'>
-						<form action={skipProfileSetup}>
+						<form 
+							action={async () => {
+								if (isSubmitting) return;
+								setIsSubmitting(true);
+								try {
+									await skipProfileSetup();
+								} finally {
+									setIsSubmitting(false);
+								}
+							}}
+						>
 							<button
 								type='submit'
-								className='text-zinc-600 hover:text-zinc-900 font-light transition-colors duration-200 text-sm underline'
+								disabled={isSubmitting}
+								className='text-zinc-600 hover:text-zinc-900 font-light transition-colors duration-200 text-sm underline disabled:opacity-50 disabled:cursor-not-allowed'
 							>
 								後で設定する
 							</button>

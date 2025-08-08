@@ -13,6 +13,7 @@ import { useSearchParams } from "next/navigation";
 
 function SignupInner() {
 	const [loading, setLoading] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const supabase = createClient();
 	const searchParams = useSearchParams();
@@ -66,7 +67,17 @@ function SignupInner() {
 							<p className='text-sm text-red-600'>{error}</p>
 						</div>
 					)}
-					<form action={signup} className='space-y-6'>
+					<form 
+					action={async (formData) => {
+						setIsSubmitting(true);
+						try {
+							await signup(formData);
+						} finally {
+							setIsSubmitting(false);
+						}
+					}}
+					className='space-y-6'
+				>
 						{/* Email Input */}
 						<div>
 							<Label htmlFor='email' className='sr-only'>
@@ -123,9 +134,17 @@ function SignupInner() {
 
 						<Button
 							type='submit'
-							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg'
+							disabled={isSubmitting}
+							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg disabled:opacity-50 disabled:cursor-not-allowed'
 						>
-							アカウント作成
+							{isSubmitting ? (
+								<>
+									<div className="w-5 h-5 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+									作成中...
+								</>
+							) : (
+								'アカウント作成'
+							)}
 						</Button>
 					</form>
 					<div className='my-6 flex items-center'>
