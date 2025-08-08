@@ -15,6 +15,7 @@ export default function Login() {
 	const [error, setError] = useState<string | null>(null);
 	const [message, setMessage] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const supabase = createClient();
 
 	// URLパラメータからエラーやメッセージを取得
@@ -82,7 +83,17 @@ export default function Login() {
 						</div>
 					)}
 
-					<form action={login} className='space-y-6'>
+					<form 
+					action={async (formData) => {
+						setIsSubmitting(true);
+						try {
+							await login(formData);
+						} finally {
+							setIsSubmitting(false);
+						}
+					}}
+					className='space-y-6'
+				>
 						<div>
 							<Label htmlFor='email' className='sr-only'>
 								メールアドレス
@@ -119,9 +130,17 @@ export default function Login() {
 
 						<Button
 							type='submit'
-							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg'
+							disabled={isSubmitting}
+							className='w-full bg-gradient-to-r from-zinc-900 to-zinc-700 hover:from-zinc-800 hover:to-zinc-600 text-white px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl text-lg disabled:opacity-50 disabled:cursor-not-allowed'
 						>
-							ログイン
+							{isSubmitting ? (
+								<>
+									<div className="w-5 h-5 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+									ログイン中...
+								</>
+							) : (
+								'ログイン'
+							)}
 						</Button>
 					</form>
 
