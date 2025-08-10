@@ -103,6 +103,29 @@ export async function toggleTask(taskId: number): Promise<void> {
 		throw new Error("タスク更新エラー:");
 	}
 }
+// タスクの内容を更新
+export async function updateTask(taskId: number, content: string): Promise<void> {
+	const supabase = await createClient();
+	const {
+		data: { user },
+		error: userError,
+	} = await supabase.auth.getUser();
+	if (userError || !user) {
+		throw new Error("ユーザー取得エラー:");
+	}
+	
+	const { error } = await supabase
+		.from("tasks")
+		.update({ content })
+		.eq("id", taskId)
+		.eq("user_id", user.id);
+		
+	if (error) {
+		console.error("タスク更新エラー:", error);
+		throw new Error("タスク更新エラー:");
+	}
+}
+
 // タスクを削除
 export async function deleteTask(id: string): Promise<void> {
 	const supabase = await createClient();
