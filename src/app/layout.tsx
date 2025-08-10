@@ -13,8 +13,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+	metadataBase: new URL(
+		process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+	),
 	title: "OneDay Todo",
 	description: "一日に集中できるタスク管理アプリ",
+	openGraph: {
+		title: "OneDay Todo",
+		description: "一日に集中できるタスク管理アプリ",
+		type: "website",
+		locale: "ja_JP",
+		siteName: "OneDay Todo",
+		images: [
+			{
+				url: "/og-image-padded.png",
+				width: 1200,
+				height: 630,
+				alt: "OneDay Todo - 一日に集中できるタスク管理アプリ",
+			},
+		],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "OneDay Todo",
+		description: "一日に集中できるタスク管理アプリ",
+		images: ["/og-image-padded.png"],
+	},
 };
 
 export default function RootLayout({
