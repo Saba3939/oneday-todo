@@ -36,7 +36,7 @@ function AuthSuccessNotificationInner() {
 
 	return (
 		<div className='fixed top-4 right-4 z-50 max-w-sm w-full'>
-			<div className='bg-white border border-green-200 rounded-lg shadow-lg p-4 animate-in slide-in-from-top duration-300'>
+			<div className='bg-white border border-green-200 rounded-lg shadow-lg p-4'>
 				<div className='flex items-start space-x-3'>
 					<div className='flex-shrink-0'>
 						<CheckCircle className='w-6 h-6 text-green-600' />
@@ -47,7 +47,7 @@ function AuthSuccessNotificationInner() {
 					</div>
 					<button
 						onClick={() => setIsVisible(false)}
-						className='flex-shrink-0 text-green-400 hover:text-green-600 transition-colors'
+						className='flex-shrink-0 text-green-400 hover:text-green-600'
 					>
 						<X className='w-5 h-5' />
 					</button>
