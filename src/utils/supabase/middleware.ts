@@ -38,14 +38,22 @@ export async function updateSession(request: NextRequest) {
 
 	const user = data?.claims;
 
+	// 認証が必要なページのみログインページにリダイレクト
+	const protectedPaths = ['/profile', '/api/user'];
+	const isProtectedPath = protectedPaths.some(path => 
+		request.nextUrl.pathname.startsWith(path)
+	);
+	
 	if (
 		!user &&
+		isProtectedPath &&
 		!request.nextUrl.pathname.startsWith("/login") &&
 		!request.nextUrl.pathname.startsWith("/signup") &&
 		!request.nextUrl.pathname.startsWith("/auth") &&
-		!request.nextUrl.pathname.startsWith("/error")
+		!request.nextUrl.pathname.startsWith("/error") &&
+		!request.nextUrl.pathname.startsWith("/landing")
 	) {
-		// no user, potentially respond by redirecting the user to the login page
+		// 認証が必要なページのみログインページにリダイレクト
 		const url = request.nextUrl.clone();
 		url.pathname = "/login";
 		return NextResponse.redirect(url);
