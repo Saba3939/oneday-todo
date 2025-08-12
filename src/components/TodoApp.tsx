@@ -1,44 +1,6 @@
 "use client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-	Calendar,
-	Plus,
-	Trash2,
-	User,
-	LogOut,
-	GripVertical,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef, useCallback } from "react";
-import {
-	DndContext,
-	closestCenter,
-	KeyboardSensor,
-	PointerSensor,
-	useSensor,
-	useSensors,
-	DragEndEvent,
-} from "@dnd-kit/core";
-import {
-	arrayMove,
-	SortableContext,
-	sortableKeyboardCoordinates,
-	verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-	addTask,
-	deleteTask,
-	getTasks,
-	updateTaskOrder,
-	updateTask,
-	toggleTask as toggleTaskAction,
-} from "@/lib/tasks";
+
+import { TasksManager } from "@/lib/unified-tasks";
 import {
 	Dialog,
 	DialogContent,
@@ -47,6 +9,25 @@ import {
 	DialogFooter,
 	DialogClose,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	GripVertical,
+	Trash2,
+	Plus,
+	User,
+	LogOut,
+} from "lucide-react";
+import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useSensors, useSensor, PointerSensor, KeyboardSensor } from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 interface Task {
 	id: number;
@@ -66,8 +47,9 @@ interface UserProfile {
 }
 
 interface TodoAppProps {
-	user: UserProfile;
-	lastLoginAt?: string; // 追加
+	user?: UserProfile; // オプショナルに変更
+	lastLoginAt?: string;
+	isGuest?: boolean; // ゲストモードフラグを追加
 }
 
 // ソート可能なタスクアイテムコンポーネント
@@ -262,7 +244,7 @@ function toJstDateString(date: Date | string) {
 	return jst.toISOString().slice(0, 10);
 }
 
-export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
+export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppProps) {
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [newTask, setNewTask] = useState("");
 	const [showUserMenu, setShowUserMenu] = useState(false);
@@ -283,7 +265,8 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 	const [deletedTasks, setDeletedTasks] = useState<Task[]>([]);
 	const [deleteConfirmTask, setDeleteConfirmTask] = useState<Task | null>(null);
 	const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
-	const [bulkSelectMode, setBulkSelectMode] = useState(false);
+	const [bulkSelectMode] = useState(false);
+	const [tasksManager, setTasksManager] = useState<TasksManager | null>(null);
 	const router = useRouter();
 	const taskRefs = useRef<(HTMLElement | null)[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -300,9 +283,21 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		})
 	);
 
+	// TasksManagerを初期化
 	useEffect(() => {
-		loadTasks();
-	}, []);
+		const initTasksManager = async () => {
+			const manager = new TasksManager(!isGuest);
+			setTasksManager(manager);
+		};
+		initTasksManager();
+	}, [isGuest]);
+
+	// TasksManagerが初期化された後にタスクを読み込み
+	useEffect(() => {
+		if (tasksManager) {
+			loadTasks();
+		}
+	}, [tasksManager]);
 
 	// キーボードナビゲーション機能
 	const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -415,9 +410,9 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 	}, [handleKeyDown]);
 
 	const deleteAllPrevTasks = async () => {
-		if (deletedPrevTasks) return;
+		if (deletedPrevTasks || !tasksManager) return;
 		for (const task of allPrevDayTasks) {
-			await deleteTask(String(task.id));
+			await tasksManager.deleteTask(task.id);
 		}
 		setDeletedPrevTasks(true);
 	};
@@ -426,10 +421,19 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		setShowTaskDialog(open);
 		if (!open) {
 			await deleteAllPrevTasks();
-			await fetch("/api/update-last-login", {
-				method: "POST",
-				credentials: "include",
-			});
+			
+			if (isGuest) {
+				// ゲストモードの場合は最終アクセス日を更新
+				const { updateLastAccessDate } = await import("@/lib/local-tasks");
+				await updateLastAccessDate();
+			} else {
+				// 認証済みユーザーの場合はlast_loginを更新
+				await fetch("/api/update-last-login", {
+					method: "POST",
+					credentials: "include",
+				});
+			}
+			
 			loadTasks(); // ダイアログを閉じた後にタスク一覧を再取得
 		}
 	};
@@ -437,29 +441,85 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 	useEffect(() => {
 		const today = new Date();
 		const todayStr = toJstDateString(today);
-		const lastLoginStr = lastLoginAt ? toJstDateString(lastLoginAt) : null;
-
-		// 初回ユーザーかどうかを判定（lastLoginAtがnullまたはundefined）
-		const isFirstUser = !lastLoginAt;
-		setIsFirstTimeUser(isFirstUser);
-
-		if (lastLoginStr !== todayStr) {
-			// 今日より前の全タスクを取得
-			import("@/lib/tasks").then(({ getTasksBeforeDate }) => {
-				getTasksBeforeDate(todayStr).then((tasks) => {
-					setAllPrevDayTasks(tasks); // 削除用に全件保持
-					const incompleteTasks = tasks.filter((t) => !t.is_completed); // 未完了のみ表示
+		
+		const checkPreviousDayTasks = async () => {
+			if (isGuest) {
+				// ゲストモードの処理
+				console.log('🔍 ゲストモード: 前日タスクチェック開始');
+				const { getLastAccessDate } = await import("@/lib/local-tasks");
+				const lastAccessStr = getLastAccessDate();
+				
+				console.log('📅 今日の日付:', todayStr);
+				console.log('📅 最終アクセス日:', lastAccessStr);
+				console.log('🤖 TasksManager:', !!tasksManager);
+				
+				// 初回ユーザーかどうかを判定
+				const isFirstUser = !lastAccessStr;
+				setIsFirstTimeUser(isFirstUser);
+				console.log('👤 初回ユーザー:', isFirstUser);
+				
+				if (lastAccessStr && lastAccessStr !== todayStr && tasksManager) {
+					console.log('✅ 前日タスクチェック条件を満たした');
+					// 前日のタスクを取得
+					const prevTasks = await tasksManager.getTasksBeforeDate(todayStr);
+					console.log('📝 前日のタスク数:', prevTasks.length);
+					console.log('📝 前日のタスク:', prevTasks);
+					
+					setAllPrevDayTasks(prevTasks);
+					const incompleteTasks = prevTasks.filter((t) => !t.is_completed);
+					console.log('📝 未完了タスク数:', incompleteTasks.length);
+					console.log('📝 未完了タスク:', incompleteTasks);
+					
 					setPrevDayTasks(incompleteTasks);
 					setSelectedTaskIds(new Set(incompleteTasks.map((t) => t.id)));
-					setShowTaskDialog(true);
-				});
-			});
+					if (incompleteTasks.length > 0) {
+						console.log('🔔 ダイアログを表示します');
+						setShowTaskDialog(true);
+					} else {
+						console.log('⚠️ 未完了タスクがないため、ダイアログは表示しません');
+						// 未完了タスクがない場合は、最終アクセス日を更新
+						const { updateLastAccessDate } = await import("@/lib/local-tasks");
+						await updateLastAccessDate();
+					}
+				} else {
+					console.log('❌ 前日タスクチェック条件を満たさない');
+					console.log('  - lastAccessStr:', lastAccessStr);
+					console.log('  - lastAccessStr !== todayStr:', lastAccessStr !== todayStr);
+					console.log('  - tasksManager:', !!tasksManager);
+				}
+			} else {
+				// 認証済みユーザーの処理（既存ロジック）
+				const lastLoginStr = lastLoginAt ? toJstDateString(lastLoginAt) : null;
+				const isFirstUser = !lastLoginAt;
+				setIsFirstTimeUser(isFirstUser);
+
+				if (lastLoginStr !== todayStr) {
+					// 今日より前の全タスクを取得
+					import("@/lib/tasks").then(({ getTasksBeforeDate }) => {
+						getTasksBeforeDate(todayStr).then((tasks) => {
+							setAllPrevDayTasks(tasks); // 削除用に全件保持
+							const incompleteTasks = tasks.filter((t) => !t.is_completed); // 未完了のみ表示
+							setPrevDayTasks(incompleteTasks);
+							setSelectedTaskIds(new Set(incompleteTasks.map((t) => t.id)));
+							if (incompleteTasks.length > 0) {
+								setShowTaskDialog(true);
+							}
+						});
+					});
+				}
+			}
+		};
+
+		if (tasksManager) {
+			checkPreviousDayTasks();
 		}
-	}, [lastLoginAt]);
+	}, [lastLoginAt, isGuest, tasksManager]);
 
 	const loadTasks = async () => {
+		if (!tasksManager) return;
+		
 		try {
-			const taskData = await getTasks();
+			const taskData = await tasksManager.getTasks();
 			setTasks(taskData);
 		} catch (error) {
 			console.error("タスク読み込みエラー:", error);
@@ -537,7 +597,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 	};
 
 	const handleAddTask = useCallback(async () => {
-		if (newTask.trim() === "" || isAddingTask) return;
+		if (newTask.trim() === "" || isAddingTask || !tasksManager) return;
 
 		const taskContent = newTask.trim();
 		setNewTask("");
@@ -546,7 +606,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		// 楽観的更新：即座にUIに追加
 		const optimisticTask: Task = {
 			id: Date.now(), // 仮のID
-			user_id: user.id,
+			user_id: isGuest ? 'guest' : (user?.id || ''),
 			order_index: tasks.length + 1,
 			content: taskContent,
 			is_completed: false,
@@ -556,8 +616,8 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		setTasks((prev) => [...prev, optimisticTask]);
 
 		try {
-			// 実際のAPI呼び出し
-			const newTaskData = await addTask(taskContent);
+			// 統一されたタスク管理インターフェースを使用
+			const newTaskData = await tasksManager.addTask(taskContent);
 
 			// 楽観的更新を実際のデータで置き換え
 			setTasks((prev) =>
@@ -571,13 +631,13 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		} finally {
 			setIsAddingTask(false);
 		}
-	}, [newTask, isAddingTask, tasks.length, user.id]);
+	}, [newTask, isAddingTask, tasks.length, user?.id, isGuest, tasksManager]);
 
 	const handleToggleTask = useCallback(async (id: string) => {
 		const taskId = Number(id);
 
 		// 既に処理中の場合は何もしない
-		if (togglingTasks.has(taskId)) return;
+		if (togglingTasks.has(taskId) || !tasksManager) return;
 
 		// 楽観的更新：即座にUIを更新
 		setTogglingTasks((prev) => new Set(prev).add(taskId));
@@ -590,8 +650,8 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		);
 
 		try {
-			// 実際のAPI呼び出し
-			await toggleTaskAction(taskId);
+			// 統一されたタスク管理インターフェースを使用
+			await tasksManager.toggleTask(taskId);
 		} catch (error) {
 			console.error("タスク更新エラー:", error);
 			// エラー時は楽観的更新を元に戻す
@@ -609,7 +669,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 				return newSet;
 			});
 		}
-	}, [togglingTasks]);
+	}, [togglingTasks, tasksManager]);
 
 	const handleDeleteTask = useCallback(async (id: string) => {
 		const taskToDelete = tasks.find(task => task.id === Number(id));
@@ -621,7 +681,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 
 	// 削除確認後の実際の削除処理
 	const handleConfirmDelete = useCallback(async () => {
-		if (!deleteConfirmTask) return;
+		if (!deleteConfirmTask || !tasksManager) return;
 
 		// 削除したタスクを履歴に保存（復元用）
 		setDeletedTasks(prev => [...prev, deleteConfirmTask]);
@@ -630,7 +690,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		setTasks(prev => prev.filter(task => task.id !== deleteConfirmTask.id));
 		
 		try {
-			await deleteTask(deleteConfirmTask.id.toString());
+			await tasksManager.deleteTask(deleteConfirmTask.id);
 			setAnnounceMessage(`タスク「${deleteConfirmTask.content}」を削除しました。Ctrl+Zで復元できます`);
 		} catch (error) {
 			console.error("タスク削除エラー:", error);
@@ -641,7 +701,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		} finally {
 			setDeleteConfirmTask(null);
 		}
-	}, [deleteConfirmTask]);
+	}, [deleteConfirmTask, tasksManager]);
 
 	// 削除キャンセル
 	const handleCancelDelete = useCallback(() => {
@@ -662,7 +722,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 
 	// タスク編集の保存
 	const handleSaveEdit = useCallback(async () => {
-		if (editingTaskId === null || editingContent.trim() === "") return;
+		if (editingTaskId === null || editingContent.trim() === "" || !tasksManager) return;
 		
 		const trimmedContent = editingContent.trim();
 		
@@ -676,7 +736,7 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		);
 		
 		try {
-			await updateTask(editingTaskId, trimmedContent);
+			await tasksManager.updateTask(editingTaskId, trimmedContent);
 			setAnnounceMessage(`タスクを「${trimmedContent}」に更新しました`);
 		} catch (error) {
 			console.error("タスク更新エラー:", error);
@@ -693,15 +753,15 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 			setEditingTaskId(null);
 			setEditingContent("");
 		}
-	}, [editingTaskId, editingContent, tasks]);
+	}, [editingTaskId, editingContent, tasks, tasksManager]);
 
 	// タスクの復元機能
 	const handleRestoreTask = useCallback(async () => {
 		const lastDeleted = deletedTasks[deletedTasks.length - 1];
-		if (!lastDeleted) return;
+		if (!lastDeleted || !tasksManager) return;
 
 		try {
-			const restoredTask = await addTask(lastDeleted.content);
+			const restoredTask = await tasksManager.addTask(lastDeleted.content);
 			setTasks(prev => [...prev, restoredTask]);
 			setDeletedTasks(prev => prev.slice(0, -1));
 			setAnnounceMessage(`タスク「${lastDeleted.content}」を復元しました`);
@@ -709,13 +769,9 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 			console.error("タスク復元エラー:", error);
 			setAnnounceMessage("タスクの復元に失敗しました");
 		}
-	}, [deletedTasks]);
+	}, [deletedTasks, tasksManager]);
 
-	// 一括選択モードの切り替え
-	const handleToggleBulkSelectMode = useCallback(() => {
-		setBulkSelectMode(prev => !prev);
-		setSelectedTasks(new Set());
-	}, []);
+
 
 	// タスクの選択状態を切り替え
 	const handleToggleTaskSelection = useCallback((taskId: number) => {
@@ -730,92 +786,24 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 		});
 	}, []);
 
-	// 全選択/全解除
-	const handleSelectAllTasks = useCallback(() => {
-		if (selectedTasks.size === tasks.length) {
-			setSelectedTasks(new Set());
-		} else {
-			setSelectedTasks(new Set(tasks.map(task => task.id)));
-		}
-	}, [selectedTasks.size, tasks]);
+	
 
-	// 選択したタスクを一括完了
-	const handleBulkComplete = useCallback(async () => {
-		if (selectedTasks.size === 0) return;
+	
 
-		const tasksToUpdate = tasks.filter(task => selectedTasks.has(task.id));
-		const areAllCompleted = tasksToUpdate.every(task => task.is_completed);
-		const newCompletedState = !areAllCompleted;
-
-		// 楽観的更新
-		setTasks(prev => 
-			prev.map(task => 
-				selectedTasks.has(task.id) 
-					? { ...task, is_completed: newCompletedState }
-					: task
-			)
-		);
-
-		try {
-			for (const task of tasksToUpdate) {
-				await toggleTaskAction(task.id);
-			}
-			setAnnounceMessage(`${selectedTasks.size}件のタスクを${newCompletedState ? '完了' : '未完了'}に変更しました`);
-		} catch (error) {
-			console.error("一括更新エラー:", error);
-			// エラー時は楽観的更新を元に戻す
-			setTasks(prev => 
-				prev.map(task => 
-					selectedTasks.has(task.id) 
-						? { ...task, is_completed: !newCompletedState }
-						: task
-				)
-			);
-			setAnnounceMessage("一括更新に失敗しました");
-		}
-		setSelectedTasks(new Set());
-	}, [selectedTasks, tasks]);
-
-	// 選択したタスクを一括削除
-	const handleBulkDelete = useCallback(async () => {
-		if (selectedTasks.size === 0) return;
-
-		const tasksToDelete = tasks.filter(task => selectedTasks.has(task.id));
-		
-		// 削除したタスクを履歴に保存（復元用）
-		setDeletedTasks(prev => [...prev, ...tasksToDelete]);
-		
-		// UI から即座に削除
-		setTasks(prev => prev.filter(task => !selectedTasks.has(task.id)));
-
-		try {
-			for (const task of tasksToDelete) {
-				await deleteTask(task.id.toString());
-			}
-			setAnnounceMessage(`${selectedTasks.size}件のタスクを削除しました。Ctrl+Zで復元できます`);
-		} catch (error) {
-			console.error("一括削除エラー:", error);
-			// エラー時は UI を元に戻す
-			setTasks(prev => [...prev, ...tasksToDelete]);
-			setDeletedTasks(prev => prev.filter(t => !tasksToDelete.some(dt => dt.id === t.id)));
-			setAnnounceMessage("一括削除に失敗しました");
-		}
-		setSelectedTasks(new Set());
-		setBulkSelectMode(false);
-	}, [selectedTasks, tasks]);
+	
 
 	const handleDragEnd = async (event: DragEndEvent) => {
 		const { active, over } = event;
 
-		if (active.id !== over?.id) {
+		if (active.id !== over?.id && tasksManager) {
 			const oldIndex = tasks.findIndex((item) => item.id === Number(active.id));
 			const newIndex = tasks.findIndex((item) => item.id === Number(over?.id));
 
 			const newTasks = arrayMove(tasks, oldIndex, newIndex);
 			setTasks(newTasks);
 			try {
-				// 数値のID配列を渡す
-				await updateTaskOrder(newTasks.map((task) => task.id));
+				// 統一されたタスク管理インターフェースを使用
+				await tasksManager.updateTaskOrder(newTasks.map((task) => task.id));
 			} catch (error) {
 				console.error("タスク並び替えエラー:", error);
 				// エラー時は元の順序に戻す
@@ -838,20 +826,28 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 	};
 
 	const handleImportTasks = async () => {
+		if (!tasksManager) return;
+		
 		const importTasks = prevDayTasks.filter((t) => selectedTaskIds.has(t.id));
 		// 選択したタスクは今日の日付で複製
 		for (const task of importTasks) {
-			await addTask(task.content);
+			await tasksManager.addTask(task.content);
 		}
-		// 昨日のタスクは全て削除
+		
+		// 前日タスクを削除（ゲスト・認証済み共通）
 		for (const task of allPrevDayTasks) {
-			await deleteTask(String(task.id));
+			await tasksManager.deleteTask(task.id);
 		}
+		
+		// 認証済みユーザーのみlast_login更新
+		if (!isGuest) {
+			await fetch("/api/update-last-login", {
+				method: "POST",
+				credentials: "include",
+			});
+		}
+		
 		setShowTaskDialog(false);
-		await fetch("/api/update-last-login", {
-			method: "POST",
-			credentials: "include",
-		}); // 追加
 		loadTasks();
 	};
 
@@ -1019,51 +1015,79 @@ export default function TodoApp({ user, lastLoginAt }: TodoAppProps) {
 
 								{/* Subtitle */}
 							</div>
-							<div className='relative user-menu-container'>
-								<button
-									className='cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full'
-									onClick={() => setShowUserMenu(!showUserMenu)}
-									aria-label='ユーザーメニューを開く'
-									aria-expanded={showUserMenu}
-									aria-haspopup='true'
-								>
-									<Avatar className='border-2 border-white shadow-md size-12 hover:ring-4 hover:ring-gray-200'>
-										<AvatarImage src={user.avatarUrl} />
-										<AvatarFallback className='bg-gradient-to-br from-gray-800 to-black text-white font-medium'>
-											{user.displayName.charAt(0)}
-										</AvatarFallback>
-									</Avatar>
-								</button>
-
-								{/* User Menu */}
-								{showUserMenu && (
-									<div className='absolute right-0 top-14 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-300/60 py-3 z-50'>
-										<div className='px-5 py-3 border-b border-gray-200/60'>
-											<p className='text-sm font-medium text-gray-900'>
-												{user.displayName}
-											</p>
-											<p className='text-xs text-gray-600 mt-0.5'>{user.email}</p>
-										</div>
-										<button
-											onClick={() => {
-												setShowUserMenu(false);
-												router.push("/profile-setup");
-											}}
-											className='w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 flex items-center gap-3'
-										>
-											<User className='w-4 h-4' />
-											プロフィール編集
-										</button>
-										<button
-											onClick={handleLogout}
-											className='w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 flex items-center gap-3'
-										>
-											<LogOut className='w-4 h-4' />
-											ログアウト
-										</button>
+							{isGuest ? (
+								// ゲストモード用のログイン促進UI
+								<div className='flex flex-col items-end gap-2'>
+									<div className='text-right'>
+										<p className='text-sm font-medium text-gray-700'>ゲストモード</p>
+										<p className='text-xs text-gray-500'>データはこのデバイスのみ保存</p>
 									</div>
-								)}
-							</div>
+									<div className='flex gap-2'>
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => router.push("/login")}
+											className="text-xs"
+										>
+											ログイン
+										</Button>
+										<Button
+											size="sm"
+											onClick={() => router.push("/signup")}
+											className="text-xs bg-blue-600 hover:bg-blue-700"
+										>
+											登録
+										</Button>
+									</div>
+								</div>
+							) : (
+								// 認証済みユーザー用のメニュー
+								<div className='relative user-menu-container'>
+									<button
+										className='cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full'
+										onClick={() => setShowUserMenu(!showUserMenu)}
+										aria-label='ユーザーメニューを開く'
+										aria-expanded={showUserMenu}
+										aria-haspopup='true'
+									>
+										<Avatar className='border-2 border-white shadow-md size-12 hover:ring-4 hover:ring-gray-200'>
+											<AvatarImage src={user?.avatarUrl} />
+											<AvatarFallback className='bg-gradient-to-br from-gray-800 to-black text-white font-medium'>
+												{user?.displayName?.charAt(0) || 'U'}
+											</AvatarFallback>
+										</Avatar>
+									</button>
+
+									{/* User Menu */}
+									{showUserMenu && (
+										<div className='absolute right-0 top-14 w-52 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-300/60 py-3 z-50'>
+											<div className='px-5 py-3 border-b border-gray-200/60'>
+												<p className='text-sm font-medium text-gray-900'>
+													{user?.displayName}
+												</p>
+												<p className='text-xs text-gray-600 mt-0.5'>{user?.email}</p>
+											</div>
+											<button
+												onClick={() => {
+													setShowUserMenu(false);
+													router.push("/profile-setup");
+												}}
+												className='w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 flex items-center gap-3'
+											>
+												<User className='w-4 h-4' />
+												プロフィール編集
+											</button>
+											<button
+												onClick={handleLogout}
+												className='w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 flex items-center gap-3'
+											>
+												<LogOut className='w-4 h-4' />
+												ログアウト
+											</button>
+										</div>
+									)}
+								</div>
+							)}
 						</div>
 					</div>
 

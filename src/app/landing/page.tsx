@@ -66,10 +66,15 @@ export default async function LandingPage() {
 							</>
 						) : (
 							<>
+								<Link href="/tasks">
+									<Button size="lg" className="w-full sm:w-auto bg-gray-600 text-white hover:bg-gray-700">
+										ゲストで試してみる
+										<ArrowRight className="ml-2 h-4 w-4" />
+									</Button>
+								</Link>
 								<Link href="/signup">
 									<Button size="lg" className="w-full sm:w-auto bg-black text-white hover:bg-gray-800">
 										無料で始める
-										<ArrowRight className="ml-2 h-4 w-4" />
 									</Button>
 								</Link>
 								<Link href="/login">
