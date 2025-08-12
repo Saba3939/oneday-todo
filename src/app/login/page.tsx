@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Lock, LogIn, Mail } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { login } from "./action";
@@ -16,6 +17,7 @@ export default function Login() {
 	const [message, setMessage] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const router = useRouter();
 	const supabase = createClient();
 
 	// URLパラメータからエラーやメッセージを取得
@@ -54,6 +56,7 @@ export default function Login() {
 			setLoading(false);
 		}
 	};
+
 
 	return (
 		<div className='min-h-screen bg-gradient-to-br from-zinc-50 to-white flex items-center justify-center p-6'>
@@ -144,6 +147,17 @@ export default function Login() {
 						</Button>
 					</form>
 
+
+					<Button
+						onClick={handleGoogleLogin}
+						disabled={loading}
+						variant='outline'
+						className='w-full mt-6 border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-800 px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-sm hover:shadow-md text-lg'
+					>
+						<FcGoogle className='w-5 h-5 mr-3' />
+						{loading ? "処理中..." : "Googleでログイン"}
+					</Button>
+
 					<div className='my-6 flex items-center'>
 						<div className='flex-1 border-t border-zinc-200'></div>
 						<span className='px-4 text-sm text-zinc-500 font-light'>
@@ -152,15 +166,14 @@ export default function Login() {
 						<div className='flex-1 border-t border-zinc-200'></div>
 					</div>
 
-					<Button
-						onClick={handleGoogleLogin}
-						disabled={loading}
-						variant='outline'
-						className='w-full border-zinc-200 hover:border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-800 px-8 py-4 font-light tracking-wide transition-all duration-300 shadow-sm hover:shadow-md text-lg'
-					>
-						<FcGoogle className='w-5 h-5 mr-3' />
-						{loading ? "処理中..." : "Googleでログイン"}
-					</Button>
+          <Link href="/tasks">
+					  <Button
+					  	variant='ghost'
+					  	className='w-full text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 px-8 py-4 font-light tracking-wide transition-all duration-300 text-lg'
+					  >
+					  	ゲストで使う
+					  </Button>
+          </Link>
 
 					<div className='mt-8 text-center text-sm'>
 						<Link

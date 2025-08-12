@@ -14,17 +14,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-	GripVertical,
-	Trash2,
-	Plus,
-	User,
-	LogOut,
-} from "lucide-react";
+import { GripVertical, Trash2, Plus, User, LogOut } from "lucide-react";
 import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import {
+	SortableContext,
+	verticalListSortingStrategy,
+	useSortable,
+	arrayMove,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useSensors, useSensor, PointerSensor, KeyboardSensor } from "@dnd-kit/core";
+import {
+	useSensors,
+	useSensor,
+	PointerSensor,
+	KeyboardSensor,
+} from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -108,21 +112,23 @@ function SortableTaskItem({
 		<Card
 			ref={setNodeRef}
 			style={style}
-			role="listitem"
-			aria-label={`タスク: ${task.content}${task.is_completed ? ' (完了済み)' : ' (未完了)'}`}
+			role='listitem'
+			aria-label={`タスク: ${task.content}${
+				task.is_completed ? " (完了済み)" : " (未完了)"
+			}`}
 			tabIndex={isFocused ? 0 : -1}
 			onFocus={() => onFocus(taskIndex)}
 			className={`group relative border border-gray-300/60 bg-white/90 backdrop-blur-sm hover:bg-white hover:border-gray-400/70 rounded-xl shadow-sm hover:shadow-lg ${
-				task.is_completed 
-					? "opacity-75 bg-gray-100/80 hover:bg-gray-100" 
-					: ""
-			} ${isDragging ? "rotate-2 shadow-xl" : ""} ${isFocused ? "ring-2 ring-blue-500 ring-opacity-50" : ""}`}
+				task.is_completed ? "opacity-75 bg-gray-100/80 hover:bg-gray-100" : ""
+			} ${isDragging ? "rotate-2 shadow-xl" : ""} ${
+				isFocused ? "ring-2 ring-blue-500 ring-opacity-50" : ""
+			}`}
 		>
 			{/* 完了したタスクの装飾ライン */}
 			{task.is_completed && (
-				<div className="absolute inset-0 bg-gradient-to-r from-gray-100/30 via-gray-50/40 to-gray-100/30 rounded-xl" />
+				<div className='absolute inset-0 bg-gradient-to-r from-gray-100/30 via-gray-50/40 to-gray-100/30 rounded-xl' />
 			)}
-			
+
 			<CardContent className='relative px-4 sm:px-5'>
 				<div className='flex items-center gap-3 sm:gap-4'>
 					{/* 一括選択用チェックボックス */}
@@ -130,7 +136,7 @@ function SortableTaskItem({
 						<Checkbox
 							checked={isSelected}
 							onCheckedChange={() => onToggleSelection(task.id)}
-							className="w-5 h-5 border-2 border-blue-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+							className='w-5 h-5 border-2 border-blue-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600'
 							aria-label={`タスク「${task.content}」を選択`}
 						/>
 					)}
@@ -158,44 +164,41 @@ function SortableTaskItem({
 						/>
 						{/* チェック時のリングエフェクト */}
 						{task.is_completed && (
-							<div className="absolute inset-0 rounded-md bg-gray-400/20" />
+							<div className='absolute inset-0 rounded-md bg-gray-400/20' />
 						)}
 					</div>
 
 					{/* Task text */}
 					{isEditing ? (
-						<div className="flex-1 flex items-center gap-2">
+						<div className='flex-1 flex items-center gap-2'>
 							<Input
 								value={editingContent}
 								onChange={(e) => onEditingContentChange(e.target.value)}
 								onKeyDown={(e) => {
-									if (e.key === 'Enter') {
-										e.preventDefault();
-										onSaveEdit();
-									} else if (e.key === 'Escape') {
+									if (e.key === "Escape") {
 										e.preventDefault();
 										onCancelEdit();
 									}
 								}}
 								onBlur={onSaveEdit}
 								autoFocus
-								className="text-base sm:text-lg font-normal leading-relaxed bg-white border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-								aria-label="タスク内容を編集"
+								className='text-base sm:text-lg font-normal leading-relaxed bg-white border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:outline-none'
+								aria-label='タスク内容を編集'
 							/>
-							<div className="flex gap-1">
+							<div className='flex gap-1'>
 								<button
 									onClick={onSaveEdit}
-									className="text-green-600 hover:text-green-800 p-1 rounded focus:ring-2 focus:ring-green-500 focus:outline-none"
-									title="保存"
-									aria-label="編集を保存"
+									className='text-green-600 hover:text-green-800 p-1 rounded focus:ring-2 focus:ring-green-500 focus:outline-none'
+									title='保存'
+									aria-label='編集を保存'
 								>
 									✓
 								</button>
 								<button
 									onClick={onCancelEdit}
-									className="text-red-600 hover:text-red-800 p-1 rounded focus:ring-2 focus:ring-red-500 focus:outline-none"
-									title="キャンセル"
-									aria-label="編集をキャンセル"
+									className='text-red-600 hover:text-red-800 p-1 rounded focus:ring-2 focus:ring-red-500 focus:outline-none'
+									title='キャンセル'
+									aria-label='編集をキャンセル'
 								>
 									✕
 								</button>
@@ -211,7 +214,7 @@ function SortableTaskItem({
 									: "text-gray-900 hover:text-gray-700"
 							} ${isToggling ? "opacity-50 scale-95" : ""}`}
 							onDoubleClick={() => onStartEdit(task.id, task.content)}
-							title="ダブルクリックで編集"
+							title='ダブルクリックで編集'
 						>
 							{task.content}
 						</label>
@@ -244,7 +247,11 @@ function toJstDateString(date: Date | string) {
 	return jst.toISOString().slice(0, 10);
 }
 
-export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppProps) {
+export default function TodoApp({
+	user,
+	lastLoginAt,
+	isGuest = false,
+}: TodoAppProps) {
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [newTask, setNewTask] = useState("");
 	const [showUserMenu, setShowUserMenu] = useState(false);
@@ -270,6 +277,7 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 	const router = useRouter();
 	const taskRefs = useRef<(HTMLElement | null)[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const isComposingRef = useRef(false);
 
 	// DnD sensors
 	const sensors = useSensors(
@@ -292,121 +300,269 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 		initTasksManager();
 	}, [isGuest]);
 
+	const loadTasks = useCallback(async () => {
+		if (!tasksManager) return;
+
+		try {
+			const taskData = await tasksManager.getTasks();
+			setTasks(taskData);
+		} catch (error) {
+			console.error("タスク読み込みエラー:", error);
+		}
+	}, [tasksManager]);
+
+	const handleAddTask = useCallback(async () => {
+		if (newTask.trim() === "" || isAddingTask || !tasksManager) return;
+
+		const taskContent = newTask.trim();
+		setNewTask("");
+		setIsAddingTask(true);
+
+		// 楽観的更新：即座にUIに追加
+		const optimisticTask: Task = {
+			id: Date.now(), // 仮のID
+			user_id: isGuest ? "guest" : user?.id || "",
+			order_index: tasks.length + 1,
+			content: taskContent,
+			is_completed: false,
+			created_at: new Date().toISOString(),
+		};
+
+		setTasks((prev) => [...prev, optimisticTask]);
+
+		try {
+			// 統一されたタスク管理インターフェースを使用
+			const newTaskData = await tasksManager.addTask(taskContent);
+
+			// 楽観的更新を実際のデータで置き換え
+			setTasks((prev) =>
+				prev.map((task) => (task.id === optimisticTask.id ? newTaskData : task))
+			);
+		} catch (error) {
+			console.error("タスク追加エラー:", error);
+			// エラー時は楽観的更新を元に戻す
+			setTasks((prev) => prev.filter((task) => task.id !== optimisticTask.id));
+			setNewTask(taskContent); // 入力内容を復元
+		} finally {
+			setIsAddingTask(false);
+		}
+	}, [newTask, isAddingTask, tasks.length, user?.id, isGuest, tasksManager]);
+
+	const handleToggleTask = useCallback(
+		async (id: string) => {
+			const taskId = Number(id);
+
+			// 既に処理中の場合は何もしない
+			if (togglingTasks.has(taskId) || !tasksManager) return;
+
+			// 楽観的更新：即座にUIを更新
+			setTogglingTasks((prev) => new Set(prev).add(taskId));
+			setTasks((prev) =>
+				prev.map((task) =>
+					task.id === taskId
+						? { ...task, is_completed: !task.is_completed }
+						: task
+				)
+			);
+
+			try {
+				// 統一されたタスク管理インターフェースを使用
+				await tasksManager.toggleTask(taskId);
+			} catch (error) {
+				console.error("タスク更新エラー:", error);
+				// エラー時は楽観的更新を元に戻す
+				setTasks((prev) =>
+					prev.map((task) =>
+						task.id === taskId
+							? { ...task, is_completed: !task.is_completed }
+							: task
+					)
+				);
+			} finally {
+				setTogglingTasks((prev) => {
+					const newSet = new Set(prev);
+					newSet.delete(taskId);
+					return newSet;
+				});
+			}
+		},
+		[togglingTasks, tasksManager]
+	);
+
+	const handleDeleteTask = useCallback(
+		async (id: string) => {
+			const taskToDelete = tasks.find((task) => task.id === Number(id));
+			if (!taskToDelete) return;
+
+			// 削除確認ダイアログを表示
+			setDeleteConfirmTask(taskToDelete);
+		},
+		[tasks]
+	);
+
+	const handleStartEdit = useCallback(
+		(taskId: number, currentContent: string) => {
+			setEditingTaskId(taskId);
+			setEditingContent(currentContent);
+		},
+		[]
+	);
+
+	const handleRestoreTask = useCallback(async () => {
+		const lastDeleted = deletedTasks[deletedTasks.length - 1];
+		if (!lastDeleted || !tasksManager) return;
+
+		try {
+			const restoredTask = await tasksManager.addTask(lastDeleted.content);
+			setTasks((prev) => [...prev, restoredTask]);
+			setDeletedTasks((prev) => prev.slice(0, -1));
+			setAnnounceMessage(`タスク「${lastDeleted.content}」を復元しました`);
+		} catch (error) {
+			console.error("タスク復元エラー:", error);
+			setAnnounceMessage("タスクの復元に失敗しました");
+		}
+	}, [deletedTasks, tasksManager]);
+
 	// TasksManagerが初期化された後にタスクを読み込み
 	useEffect(() => {
 		if (tasksManager) {
 			loadTasks();
 		}
-	}, [tasksManager]);
+	}, [tasksManager, loadTasks]);
 
 	// キーボードナビゲーション機能
-	const handleKeyDown = useCallback((e: KeyboardEvent) => {
-		// Dialogが開いている時はスキップ
-		if (showTaskDialog || showUserMenu) return;
-		
-		// 入力フィールドにフォーカスがある時の処理
-		if (e.target === inputRef.current) {
-			if (e.key === 'Enter') {
-				e.preventDefault();
-				handleAddTask();
-			} else if (e.key === 'Escape') {
-				inputRef.current?.blur();
-			}
-			return;
-		}
+	const handleKeyDown = useCallback(
+		(e: KeyboardEvent) => {
+			// Dialogが開いている時はスキップ
+			if (showTaskDialog || showUserMenu) return;
 
-		switch (e.key) {
-			case 'n':
-			case 'N':
-				// 新しいタスク入力にフォーカス
-				if (!e.ctrlKey && !e.metaKey) {
+			// 入力フィールドにフォーカスがある時の処理
+			if (e.target === inputRef.current) {
+				// IME変換中のEnterはフォーム送信も含めて抑止
+				if (e.isComposing || isComposingRef.current) {
+					if (e.key === "Enter") {
+						e.preventDefault();
+					}
+					return;
+				}
+				if (e.key === "Enter") {
 					e.preventDefault();
-					inputRef.current?.focus();
+					handleAddTask();
+				} else if (e.key === "Escape") {
+					inputRef.current?.blur();
 				}
-				break;
-			case 'e':
-			case 'E':
-				// タスク編集開始
-				if (focusedTaskIndex >= 0 && focusedTaskIndex < tasks.length) {
+				return;
+			}
+
+			switch (e.key) {
+				case "n":
+				case "N":
+					// 新しいタスク入力にフォーカス
+					if (!e.ctrlKey && !e.metaKey) {
+						e.preventDefault();
+						inputRef.current?.focus();
+					}
+					break;
+				case "e":
+				case "E":
+					// タスク編集開始
+					if (focusedTaskIndex >= 0 && focusedTaskIndex < tasks.length) {
+						e.preventDefault();
+						const task = tasks[focusedTaskIndex];
+						handleStartEdit(task.id, task.content);
+					}
+					break;
+				case "z":
+				case "Z":
+					// 復元機能（Ctrl+Z / Cmd+Z）
+					if ((e.ctrlKey || e.metaKey) && deletedTasks.length > 0) {
+						e.preventDefault();
+						handleRestoreTask();
+					}
+					break;
+				case "j":
+				case "ArrowDown":
+					// 下のタスクに移動
 					e.preventDefault();
-					const task = tasks[focusedTaskIndex];
-					handleStartEdit(task.id, task.content);
-				}
-				break;
-			case 'z':
-			case 'Z':
-				// 復元機能（Ctrl+Z / Cmd+Z）
-				if ((e.ctrlKey || e.metaKey) && deletedTasks.length > 0) {
+					if (focusedTaskIndex < tasks.length - 1) {
+						const newIndex = focusedTaskIndex + 1;
+						setFocusedTaskIndex(newIndex);
+						taskRefs.current[newIndex]?.focus();
+					}
+					break;
+				case "k":
+				case "ArrowUp":
+					// 上のタスクに移動
 					e.preventDefault();
-					handleRestoreTask();
-				}
-				break;
-			case 'j':
-			case 'ArrowDown':
-				// 下のタスクに移動
-				e.preventDefault();
-				if (focusedTaskIndex < tasks.length - 1) {
-					const newIndex = focusedTaskIndex + 1;
-					setFocusedTaskIndex(newIndex);
-					taskRefs.current[newIndex]?.focus();
-				}
-				break;
-			case 'k':
-			case 'ArrowUp':
-				// 上のタスクに移動
-				e.preventDefault();
-				if (focusedTaskIndex > 0) {
-					const newIndex = focusedTaskIndex - 1;
-					setFocusedTaskIndex(newIndex);
-					taskRefs.current[newIndex]?.focus();
-				} else if (focusedTaskIndex === -1 && tasks.length > 0) {
-					const newIndex = tasks.length - 1;
-					setFocusedTaskIndex(newIndex);
-					taskRefs.current[newIndex]?.focus();
-				}
-				break;
-			case ' ':
-			case 'Enter':
-				// タスクの完了状態を切り替え
-				if (focusedTaskIndex >= 0 && focusedTaskIndex < tasks.length) {
-					e.preventDefault();
-					const task = tasks[focusedTaskIndex];
-					handleToggleTask(task.id.toString());
-					setAnnounceMessage(`${task.content} を${task.is_completed ? '未完了' : '完了'}に変更しました`);
-				}
-				break;
-			case 'd':
-			case 'Delete':
-			case 'Backspace':
-				// タスクを削除
-				if (focusedTaskIndex >= 0 && focusedTaskIndex < tasks.length) {
-					e.preventDefault();
-					const task = tasks[focusedTaskIndex];
-					handleDeleteTask(task.id.toString());
-					setAnnounceMessage(`${task.content} を削除しました`);
-					// フォーカスを調整
-					const newFocusIndex = Math.min(focusedTaskIndex, tasks.length - 2);
-					setFocusedTaskIndex(newFocusIndex);
-					setTimeout(() => {
-						if (newFocusIndex >= 0) {
-							taskRefs.current[newFocusIndex]?.focus();
-						} else {
-							inputRef.current?.focus();
-						}
-					}, 100);
-				}
-				break;
-			case 'Escape':
-				// フォーカスをリセット
-				setFocusedTaskIndex(-1);
-				(document.activeElement as HTMLElement)?.blur();
-				break;
-		}
-	}, [tasks, focusedTaskIndex, showTaskDialog, showUserMenu]);
+					if (focusedTaskIndex > 0) {
+						const newIndex = focusedTaskIndex - 1;
+						setFocusedTaskIndex(newIndex);
+						taskRefs.current[newIndex]?.focus();
+					} else if (focusedTaskIndex === -1 && tasks.length > 0) {
+						const newIndex = tasks.length - 1;
+						setFocusedTaskIndex(newIndex);
+						taskRefs.current[newIndex]?.focus();
+					}
+					break;
+				case " ":
+				case "Enter":
+					// タスクの完了状態を切り替え
+					if (focusedTaskIndex >= 0 && focusedTaskIndex < tasks.length) {
+						e.preventDefault();
+						const task = tasks[focusedTaskIndex];
+						handleToggleTask(task.id.toString());
+						setAnnounceMessage(
+							`${task.content} を${
+								task.is_completed ? "未完了" : "完了"
+							}に変更しました`
+						);
+					}
+					break;
+				case "d":
+				case "Delete":
+				case "Backspace":
+					// タスクを削除
+					if (focusedTaskIndex >= 0 && focusedTaskIndex < tasks.length) {
+						e.preventDefault();
+						const task = tasks[focusedTaskIndex];
+						handleDeleteTask(task.id.toString());
+						setAnnounceMessage(`${task.content} を削除しました`);
+						// フォーカスを調整
+						const newFocusIndex = Math.min(focusedTaskIndex, tasks.length - 2);
+						setFocusedTaskIndex(newFocusIndex);
+						setTimeout(() => {
+							if (newFocusIndex >= 0) {
+								taskRefs.current[newFocusIndex]?.focus();
+							} else {
+								inputRef.current?.focus();
+							}
+						}, 100);
+					}
+					break;
+				case "Escape":
+					// フォーカスをリセット
+					setFocusedTaskIndex(-1);
+					(document.activeElement as HTMLElement)?.blur();
+					break;
+			}
+		},
+		[
+			tasks,
+			focusedTaskIndex,
+			showTaskDialog,
+			showUserMenu,
+			deletedTasks.length,
+			handleAddTask,
+			handleDeleteTask,
+			handleRestoreTask,
+			handleStartEdit,
+			handleToggleTask,
+		]
+	);
 
 	useEffect(() => {
-		document.addEventListener('keydown', handleKeyDown);
-		return () => document.removeEventListener('keydown', handleKeyDown);
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [handleKeyDown]);
 
 	const deleteAllPrevTasks = async () => {
@@ -421,7 +577,7 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 		setShowTaskDialog(open);
 		if (!open) {
 			await deleteAllPrevTasks();
-			
+
 			if (isGuest) {
 				// ゲストモードの場合は最終アクセス日を更新
 				const { updateLastAccessDate } = await import("@/lib/local-tasks");
@@ -433,7 +589,7 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 					credentials: "include",
 				});
 			}
-			
+
 			loadTasks(); // ダイアログを閉じた後にタスク一覧を再取得
 		}
 	};
@@ -441,51 +597,54 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 	useEffect(() => {
 		const today = new Date();
 		const todayStr = toJstDateString(today);
-		
+
 		const checkPreviousDayTasks = async () => {
 			if (isGuest) {
 				// ゲストモードの処理
-				console.log('🔍 ゲストモード: 前日タスクチェック開始');
+				console.log("🔍 ゲストモード: 前日タスクチェック開始");
 				const { getLastAccessDate } = await import("@/lib/local-tasks");
 				const lastAccessStr = getLastAccessDate();
-				
-				console.log('📅 今日の日付:', todayStr);
-				console.log('📅 最終アクセス日:', lastAccessStr);
-				console.log('🤖 TasksManager:', !!tasksManager);
-				
+
+				console.log("📅 今日の日付:", todayStr);
+				console.log("📅 最終アクセス日:", lastAccessStr);
+				console.log("🤖 TasksManager:", !!tasksManager);
+
 				// 初回ユーザーかどうかを判定
 				const isFirstUser = !lastAccessStr;
 				setIsFirstTimeUser(isFirstUser);
-				console.log('👤 初回ユーザー:', isFirstUser);
-				
+				console.log("👤 初回ユーザー:", isFirstUser);
+
 				if (lastAccessStr && lastAccessStr !== todayStr && tasksManager) {
-					console.log('✅ 前日タスクチェック条件を満たした');
+					console.log("✅ 前日タスクチェック条件を満たした");
 					// 前日のタスクを取得
 					const prevTasks = await tasksManager.getTasksBeforeDate(todayStr);
-					console.log('📝 前日のタスク数:', prevTasks.length);
-					console.log('📝 前日のタスク:', prevTasks);
-					
+					console.log("📝 前日のタスク数:", prevTasks.length);
+					console.log("📝 前日のタスク:", prevTasks);
+
 					setAllPrevDayTasks(prevTasks);
 					const incompleteTasks = prevTasks.filter((t) => !t.is_completed);
-					console.log('📝 未完了タスク数:', incompleteTasks.length);
-					console.log('📝 未完了タスク:', incompleteTasks);
-					
+					console.log("📝 未完了タスク数:", incompleteTasks.length);
+					console.log("📝 未完了タスク:", incompleteTasks);
+
 					setPrevDayTasks(incompleteTasks);
 					setSelectedTaskIds(new Set(incompleteTasks.map((t) => t.id)));
 					if (incompleteTasks.length > 0) {
-						console.log('🔔 ダイアログを表示します');
+						console.log("🔔 ダイアログを表示します");
 						setShowTaskDialog(true);
 					} else {
-						console.log('⚠️ 未完了タスクがないため、ダイアログは表示しません');
+						console.log("⚠️ 未完了タスクがないため、ダイアログは表示しません");
 						// 未完了タスクがない場合は、最終アクセス日を更新
 						const { updateLastAccessDate } = await import("@/lib/local-tasks");
 						await updateLastAccessDate();
 					}
 				} else {
-					console.log('❌ 前日タスクチェック条件を満たさない');
-					console.log('  - lastAccessStr:', lastAccessStr);
-					console.log('  - lastAccessStr !== todayStr:', lastAccessStr !== todayStr);
-					console.log('  - tasksManager:', !!tasksManager);
+					console.log("❌ 前日タスクチェック条件を満たさない");
+					console.log("  - lastAccessStr:", lastAccessStr);
+					console.log(
+						"  - lastAccessStr !== todayStr:",
+						lastAccessStr !== todayStr
+					);
+					console.log("  - tasksManager:", !!tasksManager);
 				}
 			} else {
 				// 認証済みユーザーの処理（既存ロジック）
@@ -515,16 +674,6 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 		}
 	}, [lastLoginAt, isGuest, tasksManager]);
 
-	const loadTasks = async () => {
-		if (!tasksManager) return;
-		
-		try {
-			const taskData = await tasksManager.getTasks();
-			setTasks(taskData);
-		} catch (error) {
-			console.error("タスク読み込みエラー:", error);
-		}
-	};
 	// メニューの外側をクリックした時に閉じる
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -596,155 +745,71 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 		};
 	};
 
-	const handleAddTask = useCallback(async () => {
-		if (newTask.trim() === "" || isAddingTask || !tasksManager) return;
-
-		const taskContent = newTask.trim();
-		setNewTask("");
-		setIsAddingTask(true);
-
-		// 楽観的更新：即座にUIに追加
-		const optimisticTask: Task = {
-			id: Date.now(), // 仮のID
-			user_id: isGuest ? 'guest' : (user?.id || ''),
-			order_index: tasks.length + 1,
-			content: taskContent,
-			is_completed: false,
-			created_at: new Date().toISOString(),
-		};
-
-		setTasks((prev) => [...prev, optimisticTask]);
-
-		try {
-			// 統一されたタスク管理インターフェースを使用
-			const newTaskData = await tasksManager.addTask(taskContent);
-
-			// 楽観的更新を実際のデータで置き換え
-			setTasks((prev) =>
-				prev.map((task) => (task.id === optimisticTask.id ? newTaskData : task))
-			);
-		} catch (error) {
-			console.error("タスク追加エラー:", error);
-			// エラー時は楽観的更新を元に戻す
-			setTasks((prev) => prev.filter((task) => task.id !== optimisticTask.id));
-			setNewTask(taskContent); // 入力内容を復元
-		} finally {
-			setIsAddingTask(false);
-		}
-	}, [newTask, isAddingTask, tasks.length, user?.id, isGuest, tasksManager]);
-
-	const handleToggleTask = useCallback(async (id: string) => {
-		const taskId = Number(id);
-
-		// 既に処理中の場合は何もしない
-		if (togglingTasks.has(taskId) || !tasksManager) return;
-
-		// 楽観的更新：即座にUIを更新
-		setTogglingTasks((prev) => new Set(prev).add(taskId));
-		setTasks((prev) =>
-			prev.map((task) =>
-				task.id === taskId
-					? { ...task, is_completed: !task.is_completed }
-					: task
-			)
-		);
-
-		try {
-			// 統一されたタスク管理インターフェースを使用
-			await tasksManager.toggleTask(taskId);
-		} catch (error) {
-			console.error("タスク更新エラー:", error);
-			// エラー時は楽観的更新を元に戻す
-			setTasks((prev) =>
-				prev.map((task) =>
-					task.id === taskId
-						? { ...task, is_completed: !task.is_completed }
-						: task
-				)
-			);
-		} finally {
-			setTogglingTasks((prev) => {
-				const newSet = new Set(prev);
-				newSet.delete(taskId);
-				return newSet;
-			});
-		}
-	}, [togglingTasks, tasksManager]);
-
-	const handleDeleteTask = useCallback(async (id: string) => {
-		const taskToDelete = tasks.find(task => task.id === Number(id));
-		if (!taskToDelete) return;
-
-		// 削除確認ダイアログを表示
-		setDeleteConfirmTask(taskToDelete);
-	}, [tasks]);
-
-	// 削除確認後の実際の削除処理
+	// 削除確認後の実際の削除処理とキャンセル
 	const handleConfirmDelete = useCallback(async () => {
 		if (!deleteConfirmTask || !tasksManager) return;
 
 		// 削除したタスクを履歴に保存（復元用）
-		setDeletedTasks(prev => [...prev, deleteConfirmTask]);
-		
+		setDeletedTasks((prev) => [...prev, deleteConfirmTask]);
+
 		// UI から即座に削除
-		setTasks(prev => prev.filter(task => task.id !== deleteConfirmTask.id));
-		
+		setTasks((prev) => prev.filter((task) => task.id !== deleteConfirmTask.id));
+
 		try {
 			await tasksManager.deleteTask(deleteConfirmTask.id);
-			setAnnounceMessage(`タスク「${deleteConfirmTask.content}」を削除しました。Ctrl+Zで復元できます`);
+			setAnnounceMessage(
+				`タスク「${deleteConfirmTask.content}」を削除しました。Ctrl+Zで復元できます`
+			);
 		} catch (error) {
 			console.error("タスク削除エラー:", error);
 			// エラー時は UI を元に戻す
-			setTasks(prev => [...prev, deleteConfirmTask]);
-			setDeletedTasks(prev => prev.filter(t => t.id !== deleteConfirmTask.id));
+			setTasks((prev) => [...prev, deleteConfirmTask]);
+			setDeletedTasks((prev) =>
+				prev.filter((t) => t.id !== deleteConfirmTask.id)
+			);
 			setAnnounceMessage("タスクの削除に失敗しました");
 		} finally {
 			setDeleteConfirmTask(null);
 		}
 	}, [deleteConfirmTask, tasksManager]);
 
-	// 削除キャンセル
 	const handleCancelDelete = useCallback(() => {
 		setDeleteConfirmTask(null);
 	}, []);
 
-	// タスク編集の開始
-	const handleStartEdit = useCallback((taskId: number, currentContent: string) => {
-		setEditingTaskId(taskId);
-		setEditingContent(currentContent);
-	}, []);
-
-	// タスク編集のキャンセル
+	// タスク編集関連の関数
 	const handleCancelEdit = useCallback(() => {
 		setEditingTaskId(null);
 		setEditingContent("");
 	}, []);
 
-	// タスク編集の保存
 	const handleSaveEdit = useCallback(async () => {
-		if (editingTaskId === null || editingContent.trim() === "" || !tasksManager) return;
-		
+		if (editingTaskId === null || editingContent.trim() === "" || !tasksManager)
+			return;
+
 		const trimmedContent = editingContent.trim();
-		
+
 		// 楽観的更新
-		setTasks(prev => 
-			prev.map(task => 
-				task.id === editingTaskId 
-					? { ...task, content: trimmedContent }
-					: task
+		setTasks((prev) =>
+			prev.map((task) =>
+				task.id === editingTaskId ? { ...task, content: trimmedContent } : task
 			)
 		);
-		
+
 		try {
 			await tasksManager.updateTask(editingTaskId, trimmedContent);
 			setAnnounceMessage(`タスクを「${trimmedContent}」に更新しました`);
 		} catch (error) {
 			console.error("タスク更新エラー:", error);
 			// エラー時は楽観的更新を元に戻す
-			setTasks(prev => 
-				prev.map(task => 
-					task.id === editingTaskId 
-						? { ...task, content: tasks.find(t => t.id === editingTaskId)?.content || "" }
+			setTasks((prev) =>
+				prev.map((task) =>
+					task.id === editingTaskId
+						? {
+								...task,
+								content:
+									tasks.find((t) => t.id === editingTaskId)?.content || "",
+						  }
 						: task
 				)
 			);
@@ -755,27 +820,9 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 		}
 	}, [editingTaskId, editingContent, tasks, tasksManager]);
 
-	// タスクの復元機能
-	const handleRestoreTask = useCallback(async () => {
-		const lastDeleted = deletedTasks[deletedTasks.length - 1];
-		if (!lastDeleted || !tasksManager) return;
-
-		try {
-			const restoredTask = await tasksManager.addTask(lastDeleted.content);
-			setTasks(prev => [...prev, restoredTask]);
-			setDeletedTasks(prev => prev.slice(0, -1));
-			setAnnounceMessage(`タスク「${lastDeleted.content}」を復元しました`);
-		} catch (error) {
-			console.error("タスク復元エラー:", error);
-			setAnnounceMessage("タスクの復元に失敗しました");
-		}
-	}, [deletedTasks, tasksManager]);
-
-
-
 	// タスクの選択状態を切り替え
 	const handleToggleTaskSelection = useCallback((taskId: number) => {
-		setSelectedTasks(prev => {
+		setSelectedTasks((prev) => {
 			const newSet = new Set(prev);
 			if (newSet.has(taskId)) {
 				newSet.delete(taskId);
@@ -785,12 +832,6 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 			return newSet;
 		});
 	}, []);
-
-	
-
-	
-
-	
 
 	const handleDragEnd = async (event: DragEndEvent) => {
 		const { active, over } = event;
@@ -827,18 +868,18 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 
 	const handleImportTasks = async () => {
 		if (!tasksManager) return;
-		
+
 		const importTasks = prevDayTasks.filter((t) => selectedTaskIds.has(t.id));
 		// 選択したタスクは今日の日付で複製
 		for (const task of importTasks) {
 			await tasksManager.addTask(task.content);
 		}
-		
+
 		// 前日タスクを削除（ゲスト・認証済み共通）
 		for (const task of allPrevDayTasks) {
 			await tasksManager.deleteTask(task.id);
 		}
-		
+
 		// 認証済みユーザーのみlast_login更新
 		if (!isGuest) {
 			await fetch("/api/update-last-login", {
@@ -846,7 +887,7 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 				credentials: "include",
 			});
 		}
-		
+
 		setShowTaskDialog(false);
 		loadTasks();
 	};
@@ -864,44 +905,40 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 	return (
 		<>
 			{/* スクリーンリーダー向けライブリージョン */}
-			<div
-				aria-live="polite"
-				aria-atomic="true"
-				className="sr-only"
-			>
+			<div aria-live='polite' aria-atomic='true' className='sr-only'>
 				{announceMessage}
 			</div>
 
 			{/* 削除確認Dialog */}
-			<Dialog open={!!deleteConfirmTask} onOpenChange={(open) => !open && handleCancelDelete()}>
-				<DialogContent className="max-w-md">
+			<Dialog
+				open={!!deleteConfirmTask}
+				onOpenChange={(open) => !open && handleCancelDelete()}
+			>
+				<DialogContent className='max-w-md'>
 					<DialogHeader>
 						<DialogTitle>タスクを削除しますか？</DialogTitle>
 					</DialogHeader>
-					<div className="py-4">
-						<p className="text-sm text-gray-600 mb-3">
+					<div className='py-4'>
+						<p className='text-sm text-gray-600 mb-3'>
 							以下のタスクを削除してもよろしいですか？
 						</p>
-						<div className="bg-gray-50 rounded-lg p-3 border">
-							<p className="font-medium text-gray-900">
+						<div className='bg-gray-50 rounded-lg p-3 border'>
+							<p className='font-medium text-gray-900'>
 								{deleteConfirmTask?.content}
 							</p>
 						</div>
-						<p className="text-xs text-gray-500 mt-2">
+						<p className='text-xs text-gray-500 mt-2'>
 							※削除後はCtrl+Zで復元できます
 						</p>
 					</div>
-					<DialogFooter className="gap-2">
-						<Button
-							variant="outline"
-							onClick={handleCancelDelete}
-						>
+					<DialogFooter className='gap-2'>
+						<Button variant='outline' onClick={handleCancelDelete}>
 							キャンセル
 						</Button>
 						<Button
-							variant="destructive"
+							variant='destructive'
 							onClick={handleConfirmDelete}
-							className="bg-red-600 hover:bg-red-700 text-white"
+							className='bg-red-600 hover:bg-red-700 text-white'
 						>
 							削除する
 						</Button>
@@ -1019,22 +1056,26 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 								// ゲストモード用のログイン促進UI
 								<div className='flex flex-col items-end gap-2'>
 									<div className='text-right'>
-										<p className='text-sm font-medium text-gray-700'>ゲストモード</p>
-										<p className='text-xs text-gray-500'>データはこのデバイスのみ保存</p>
+										<p className='text-sm font-medium text-gray-700'>
+											ゲストモード
+										</p>
+										<p className='text-xs text-gray-500'>
+											データはこのデバイスのみ保存
+										</p>
 									</div>
 									<div className='flex gap-2'>
 										<Button
-											variant="outline"
-											size="sm"
+											variant='outline'
+											size='sm'
 											onClick={() => router.push("/login")}
-											className="text-xs"
+											className='text-xs'
 										>
 											ログイン
 										</Button>
 										<Button
-											size="sm"
+											size='sm'
 											onClick={() => router.push("/signup")}
-											className="text-xs bg-blue-600 hover:bg-blue-700"
+											className='text-xs bg-blue-600 hover:bg-blue-700'
 										>
 											登録
 										</Button>
@@ -1053,7 +1094,7 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 										<Avatar className='border-2 border-white shadow-md size-12 hover:ring-4 hover:ring-gray-200'>
 											<AvatarImage src={user?.avatarUrl} />
 											<AvatarFallback className='bg-gradient-to-br from-gray-800 to-black text-white font-medium'>
-												{user?.displayName?.charAt(0) || 'U'}
+												{user?.displayName?.charAt(0) || "U"}
 											</AvatarFallback>
 										</Avatar>
 									</button>
@@ -1065,7 +1106,9 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 												<p className='text-sm font-medium text-gray-900'>
 													{user?.displayName}
 												</p>
-												<p className='text-xs text-gray-600 mt-0.5'>{user?.email}</p>
+												<p className='text-xs text-gray-600 mt-0.5'>
+													{user?.email}
+												</p>
 											</div>
 											<button
 												onClick={() => {
@@ -1096,6 +1139,11 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 						<div className='relative bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-300/50 shadow-lg hover:shadow-xl p-6 sm:p-8'>
 							<form
 								onSubmit={(e) => {
+									// IME確定Enterでの送信抑止
+									if (isComposingRef.current) {
+										e.preventDefault();
+										return;
+									}
 									e.preventDefault();
 									handleAddTask();
 								}}
@@ -1112,11 +1160,29 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 											disabled={isAddingTask}
 											className='w-full border-0 border-b-2 border-gray-300 rounded-none bg-transparent px-0 py-4 placeholder:text-gray-500 focus:border-gray-800 focus:ring-0 focus-visible:ring-0 focus:outline-none font-normal text-lg disabled:opacity-50'
 											aria-label='新しいタスクを入力'
+											onCompositionStart={() => {
+												isComposingRef.current = true;
+											}}
+											onCompositionEnd={() => {
+												isComposingRef.current = false;
+											}}
+											onKeyDown={(e) => {
+												const composing = (
+													e.nativeEvent as unknown as { isComposing?: boolean }
+												).isComposing;
+												if (
+													(composing || isComposingRef.current) &&
+													e.key === "Enter"
+												) {
+													e.preventDefault();
+													return;
+												}
+											}}
 										/>
 										{/* Animated underline */}
 										<div className='absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-gray-800 to-black transform scale-x-0 origin-left w-full focus-within:scale-x-100'></div>
 									</div>
-									
+
 									{/* Enhanced Button */}
 									<Button
 										type='submit'
@@ -1143,9 +1209,17 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 					</div>
 
 					{/* Tasks list */}
-					<div className='space-y-3 sm:space-y-4' role="list" aria-label="今日のタスク一覧">
+					<div
+						className='space-y-3 sm:space-y-4'
+						role='list'
+						aria-label='今日のタスク一覧'
+					>
 						{tasks.length === 0 ? (
-							<div className='text-center py-16 sm:py-20' role="status" aria-live="polite">
+							<div
+								className='text-center py-16 sm:py-20'
+								role='status'
+								aria-live='polite'
+							>
 								<div className='w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 sm:mb-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center shadow-lg border border-gray-300/50'>
 									<div className='w-6 h-6 sm:w-8 sm:h-8 border-2 border-gray-600 rounded-full'></div>
 								</div>
@@ -1168,8 +1242,8 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 								>
 									<div className='space-y-3 sm:space-y-4'>
 										{tasks.map((task, index) => (
-											<div 
-												key={task.id} 
+											<div
+												key={task.id}
 												className=''
 												style={{ animationDelay: `${index * 50}ms` }}
 												ref={(el) => {
@@ -1208,20 +1282,32 @@ export default function TodoApp({ user, lastLoginAt, isGuest = false }: TodoAppP
 							{/* Progress Bar */}
 							<div className='mb-6'>
 								<div className='flex justify-between items-center mb-3'>
-									<span className='text-sm font-medium text-gray-900'>今日の進捗</span>
+									<span className='text-sm font-medium text-gray-900'>
+										今日の進捗
+									</span>
 									<span className='text-sm font-medium text-gray-700'>
-										{Math.round((tasks.filter(task => task.is_completed).length / tasks.length) * 100)}%
+										{Math.round(
+											(tasks.filter((task) => task.is_completed).length /
+												tasks.length) *
+												100
+										)}
+										%
 									</span>
 								</div>
 								<div className='w-full bg-gray-300 rounded-full h-3 shadow-inner'>
-									<div 
+									<div
 										className='bg-gradient-to-r from-gray-700 to-gray-800 h-3 rounded-full shadow-sm'
-										style={{ width: `${(tasks.filter(task => task.is_completed).length / tasks.length) * 100}%` }}
+										style={{
+											width: `${
+												(tasks.filter((task) => task.is_completed).length /
+													tasks.length) *
+												100
+											}%`,
+										}}
 									></div>
 								</div>
 							</div>
-							
-{/* Stats */}
+
 							<div className='flex justify-center gap-8 py-6 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-300/40'>
 								<div className='flex items-center gap-2 text-center'>
 									<div className='w-3 h-3 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full shadow-sm'></div>

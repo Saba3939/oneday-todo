@@ -10,6 +10,7 @@ import {
 	ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { createClient } from "@/utils/supabase/server";
 
@@ -30,9 +31,11 @@ export default async function LandingPage() {
 				<div className="mx-auto max-w-4xl">
 					<div className="mb-8">
 						<div className="flex justify-center mb-4">
-							<img 
+							<Image 
 								src="/oneday-todo.png" 
 								alt="OneDay Todo アイコン" 
+								width={128}
+								height={128}
 								className="size-32  md:size-40 rounded-lg"
 							/>
 						</div>
