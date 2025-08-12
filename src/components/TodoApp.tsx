@@ -14,7 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { GripVertical, Trash2, Plus, User, LogOut } from "lucide-react";
+import { GripVertical, Trash2, Plus, User, LogOut, BarChart3, Moon } from "lucide-react";
 import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core";
 import {
 	SortableContext,
@@ -32,6 +32,7 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface Task {
 	id: number;
@@ -40,6 +41,7 @@ interface Task {
 	content: string;
 	is_completed: boolean;
 	created_at: string;
+	completed_at?: string; // 統計機能用に追加
 }
 
 interface UserProfile {
@@ -274,6 +276,9 @@ export default function TodoApp({
 	const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
 	const [bulkSelectMode] = useState(false);
 	const [tasksManager, setTasksManager] = useState<TasksManager | null>(null);
+	const [isPremiumUser, setIsPremiumUser] = useState<boolean>(false);
+	const [dailyTaskCount, setDailyTaskCount] = useState<number>(0);
+	const [showPremiumDialog, setShowPremiumDialog] = useState<boolean>(false);
 	const router = useRouter();
 	const taskRefs = useRef<(HTMLElement | null)[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -311,8 +316,59 @@ export default function TodoApp({
 		}
 	}, [tasksManager]);
 
+	// プレミアムステータスを読み込む関数
+	const loadPremiumStatus = useCallback(async () => {
+		if (isGuest) {
+			setIsPremiumUser(false);
+			setDailyTaskCount(0);
+			return;
+		}
+
+		try {
+			const { getUserPremiumStatus, canAddTask } = await import('@/lib/tasks');
+			const premiumStatus = await getUserPremiumStatus();
+			const isPremium = premiumStatus?.is_premium || false;
+			setIsPremiumUser(isPremium);
+
+			// 無料ユーザーの場合は日次タスクカウントを取得
+			if (!isPremium) {
+				const today = new Date();
+				const todayStr = today.toISOString().split('T')[0];
+				const canAddResult = await canAddTask(todayStr);
+				setDailyTaskCount(canAddResult.currentCount || 0);
+			} else {
+				setDailyTaskCount(0); // プレミアムユーザーは制限なし
+			}
+		} catch (error) {
+			console.error("プレミアムステータス取得エラー:", error);
+			setIsPremiumUser(false);
+			setDailyTaskCount(0);
+		}
+	}, [isGuest]);
+
 	const handleAddTask = useCallback(async () => {
 		if (newTask.trim() === "" || isAddingTask || !tasksManager) return;
+
+		// プレミアム制限チェック（無料ユーザーのみ）
+		if (!isPremiumUser) {
+			try {
+				const { canAddTask } = await import('@/lib/tasks');
+				const today = new Date();
+				const todayStr = today.toISOString().split('T')[0];
+				const canAddResult = await canAddTask(todayStr);
+				
+				if (!canAddResult.canAdd) {
+					setShowPremiumDialog(true);
+					return;
+				}
+				
+				// カウントを更新（制限チェック後）
+				setDailyTaskCount(canAddResult.currentCount || 0);
+			} catch (error) {
+				console.error('制限チェックエラー:', error);
+				// エラー時はそのまま続行
+			}
+		}
 
 		const taskContent = newTask.trim();
 		setNewTask("");
@@ -338,15 +394,26 @@ export default function TodoApp({
 			setTasks((prev) =>
 				prev.map((task) => (task.id === optimisticTask.id ? newTaskData : task))
 			);
+			
+			// 作成成功時にカウントを+1
+			if (!isPremiumUser) {
+				setDailyTaskCount(prev => prev + 1);
+			}
 		} catch (error) {
 			console.error("タスク追加エラー:", error);
 			// エラー時は楽観的更新を元に戻す
 			setTasks((prev) => prev.filter((task) => task.id !== optimisticTask.id));
 			setNewTask(taskContent); // 入力内容を復元
+			
+			// エラーがタスク制限によるものかチェック
+			const errorMsg = error instanceof Error ? error.message : '';
+			if (errorMsg.includes('制限') || errorMsg.includes('プレミアム')) {
+				setShowPremiumDialog(true);
+			}
 		} finally {
 			setIsAddingTask(false);
 		}
-	}, [newTask, isAddingTask, tasks.length, user?.id, isGuest, tasksManager]);
+	}, [newTask, isAddingTask, tasks.length, user?.id, isGuest, tasksManager, isPremiumUser]);;
 
 	const handleToggleTask = useCallback(
 		async (id: string) => {
@@ -412,23 +479,48 @@ export default function TodoApp({
 		const lastDeleted = deletedTasks[deletedTasks.length - 1];
 		if (!lastDeleted || !tasksManager) return;
 
+		// プレミアム制限チェック（無料ユーザーのみ）
+		if (!isPremiumUser) {
+			try {
+				const { canAddTask } = await import('@/lib/tasks');
+				const today = new Date();
+				const todayStr = today.toISOString().split('T')[0];
+				const canAddResult = await canAddTask(todayStr);
+				
+				if (!canAddResult.canAdd) {
+					setShowPremiumDialog(true);
+					return;
+				}
+			} catch (error) {
+				console.error('復元時制限チェックエラー:', error);
+				// エラー時はそのまま続行
+			}
+		}
+
 		try {
 			const restoredTask = await tasksManager.addTask(lastDeleted.content);
 			setTasks((prev) => [...prev, restoredTask]);
 			setDeletedTasks((prev) => prev.slice(0, -1));
+			
+			// 復元成功時にカウントを+1
+			if (!isPremiumUser) {
+				setDailyTaskCount(prev => prev + 1);
+			}
+			
 			setAnnounceMessage(`タスク「${lastDeleted.content}」を復元しました`);
 		} catch (error) {
 			console.error("タスク復元エラー:", error);
 			setAnnounceMessage("タスクの復元に失敗しました");
 		}
-	}, [deletedTasks, tasksManager]);
+	}, [deletedTasks, tasksManager, isPremiumUser]);
 
 	// TasksManagerが初期化された後にタスクを読み込み
 	useEffect(() => {
 		if (tasksManager) {
 			loadTasks();
+			loadPremiumStatus();
 		}
-	}, [tasksManager, loadTasks]);
+	}, [tasksManager, loadTasks, loadPremiumStatus]);
 
 	// キーボードナビゲーション機能
 	const handleKeyDown = useCallback(
@@ -909,6 +1001,56 @@ export default function TodoApp({
 				{announceMessage}
 			</div>
 
+			{/* プレミアムプランダイアログ */}
+			<Dialog
+				open={showPremiumDialog}
+				onOpenChange={(open) => setShowPremiumDialog(open)}
+			>
+				<DialogContent className='max-w-lg'>
+					<DialogHeader>
+						<DialogTitle>タスク数の上限に達しました</DialogTitle>
+					</DialogHeader>
+					<div className='py-4 space-y-4'>
+						<div className='bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4'>
+							<p className='text-sm text-amber-800 mb-2 font-medium'>
+								🚀 無料プランの制限
+							</p>
+							<p className='text-sm text-amber-700'>
+								1日に作成できるタスクは10個までです。現在 {dailyTaskCount}/10 個のタスクがあります。
+							</p>
+						</div>
+						
+						<div className='bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4'>
+							<p className='text-sm text-blue-800 mb-2 font-medium'>
+								✨ プレミアムプラン（月300円）の特典
+							</p>
+							<ul className='text-sm text-blue-700 space-y-1'>
+								<li>• 無制限のタスク作成</li>
+								<li>• 1年間の詳細統計</li>
+								<li>• ダークモード機能</li>
+							</ul>
+						</div>
+					</div>
+					<DialogFooter className='gap-2'>
+						<Button 
+							variant='outline' 
+							onClick={() => setShowPremiumDialog(false)}
+						>
+							後で
+						</Button>
+						<Button
+							className='bg-blue-600 hover:bg-blue-700 text-white'
+							onClick={() => {
+								setShowPremiumDialog(false);
+								router.push('/premium/upgrade');
+							}}
+						>
+							プレミアムにアップグレード
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
 			{/* 削除確認Dialog */}
 			<Dialog
 				open={!!deleteConfirmTask}
@@ -1009,7 +1151,7 @@ export default function TodoApp({
 				</DialogContent>
 			</Dialog>
 			{/* 既存のTodoApp UI */}
-			<div className='min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100/40 pt-8 sm:pt-10'>
+			<div className='min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100/40 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900/40 pt-8 sm:pt-10'>
 				<div className='max-w-2xl mx-auto px-4 sm:px-6 lg:px-8'>
 					{/* Header with current date */}
 					<div>
@@ -1019,7 +1161,7 @@ export default function TodoApp({
 								<div className='flex items-end gap-5 mb-4'>
 									{/* Large Date Number */}
 									<div className='relative'>
-										<span className='text-6xl sm:text-7xl font-extralight text-gray-900 leading-none tracking-tight drop-shadow-sm'>
+										<span className='text-6xl sm:text-7xl font-extralight text-gray-900 dark:text-gray-100 leading-none tracking-tight drop-shadow-sm'>
 											{getCurrentDate().date}
 										</span>
 										<div className='absolute -top-1 -right-5 w-5 h-5 bg-gradient-to-br from-gray-800 to-black rounded-full shadow-lg'></div>
@@ -1115,11 +1257,32 @@ export default function TodoApp({
 													setShowUserMenu(false);
 													router.push("/profile-setup");
 												}}
-												className='w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 flex items-center gap-3'
+												className='w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:text-gray-900 dark:hover:text-gray-100 flex items-center gap-3'
 											>
 												<User className='w-4 h-4' />
 												プロフィール編集
 											</button>
+											<button
+												onClick={() => {
+													setShowUserMenu(false);
+													router.push("/statistics");
+												}}
+												className='w-full text-left px-5 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:text-gray-900 dark:hover:text-gray-100 flex items-center gap-3'
+											>
+												<BarChart3 className='w-4 h-4' />
+												統計
+											</button>
+											<div className='flex items-center justify-between px-5 py-3 text-sm text-gray-700 dark:text-gray-300'>
+												<div className='flex items-center gap-3'>
+													<Moon className='w-4 h-4' />
+													ダークモード
+												</div>
+												<ThemeToggle 
+													isPremium={isPremiumUser} 
+													size="sm"
+													variant="ghost"
+												/>
+											</div>
 											<button
 												onClick={handleLogout}
 												className='w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 flex items-center gap-3'
@@ -1205,6 +1368,26 @@ export default function TodoApp({
 									</Button>
 								</div>
 							</form>
+							
+							{/* プレミアム制限表示 */}
+							{!isPremiumUser && (
+								<div className='mt-4 flex items-center justify-between text-sm'>
+									<div className='flex items-center gap-2 text-gray-600'>
+										<div className='w-2 h-2 bg-gray-400 rounded-full'></div>
+										<span>無料プラン: {dailyTaskCount}/10 タスク</span>
+									</div>
+									{dailyTaskCount >= 8 && (
+										<Button
+											variant='outline'
+											size='sm'
+											onClick={() => router.push('/premium/upgrade')}
+											className='text-xs text-blue-600 border-blue-200 hover:bg-blue-50'
+										>
+											アップグレード
+										</Button>
+									)}
+								</div>
+							)}
 						</div>
 					</div>
 
