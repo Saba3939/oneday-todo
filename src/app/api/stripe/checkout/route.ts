@@ -4,6 +4,14 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function POST(req: NextRequest) {
   try {
+    // Stripeが利用できない場合のエラーハンドリング
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Payment functionality is not available' },
+        { status: 503 }
+      );
+    }
+
     const supabase = await createClient();
     
     // 認証確認

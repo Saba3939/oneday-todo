@@ -6,8 +6,16 @@ import Stripe from 'stripe';
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: NextRequest) {
+  // Stripeが利用できない場合のエラーハンドリング
+  if (!stripe) {
+    return NextResponse.json(
+      { error: 'Webhook functionality is not available' },
+      { status: 503 }
+    );
+  }
+
   const body = await req.text();
-  const sig = req.headers.get('stripe-signature')!;
+  const sig = req.headers.get('stripe-signature')!
 
   // 本番環境では基本情報のみログ出力
   if (process.env.NODE_ENV !== 'production') {
