@@ -7,9 +7,10 @@ if (!stripeSecretKey && process.env.NODE_ENV === 'production') {
   throw new Error('STRIPE_SECRET_KEY environment variable is required in production');
 }
 
-// Stripe インスタンスは環境変数がある場合のみ作成
+// Cloudflare Workers用のfetch設定
 export const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
   apiVersion: '2025-07-30.basil',
+  httpClient: Stripe.createFetchHttpClient(),
 }) : null;
 
 // 製品とプライスID（実際のStripe Dashboard値に置き換える必要あり）

@@ -193,6 +193,18 @@ function UpgradePageContent() {
                     
                     const data = await response.json();
                     
+                    if (!response.ok) {
+                      // APIエラーレスポンスの詳細を表示
+                      const errorMessage = data.error || '不明なエラーが発生しました';
+                      if (response.status === 503) {
+                        alert('現在決済機能を準備中です。しばらくお待ちください。');
+                      } else {
+                        alert(`エラー: ${errorMessage}`);
+                      }
+                      setUpgrading(false);
+                      return;
+                    }
+                    
                     if (data.url) {
                       window.location.href = data.url;
                     } else {
@@ -201,7 +213,7 @@ function UpgradePageContent() {
                     }
                   } catch (error) {
                     console.error('決済処理エラー:', error);
-                    alert('エラーが発生しました');
+                    alert('ネットワークエラーが発生しました。インターネット接続を確認してください。');
                     setUpgrading(false);
                   }
                 }}

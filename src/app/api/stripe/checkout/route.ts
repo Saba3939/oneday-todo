@@ -51,13 +51,23 @@ export async function POST(req: NextRequest) {
         .eq('id', user.id);
     }
 
+    // 設定値の確認
+    if (!PREMIUM_PRICE_ID) {
+      console.error('STRIPE_PREMIUM_PRICE_ID is not set');
+      return NextResponse.json(
+        { error: 'STRIPE_PREMIUM_PRICE_IDが設定されていません' },
+        { status: 500 }
+      );
+    }
+
     // Checkout Sessionを作成
     // 本番環境では詳細ログを制限
     if (process.env.NODE_ENV !== 'production') {
       console.log('🛒 Checkout Session作成中:', {
         customerId,
         userId: user.id,
-        email: user.email
+        email: user.email,
+        priceId: PREMIUM_PRICE_ID
       });
     }
 
@@ -92,8 +102,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error('Checkout session creation failed:', error);
+    
+    // Stripeエラーの詳細を含める
+    let errorMessage = 'Checkout sessionの作成に失敗しました';
+    if (error instanceof Error) {
+      errorMessage += `: ${error.message}`;
+    }
+    
     return NextResponse.json(
-      { error: 'Checkout sessionの作成に失敗しました' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
