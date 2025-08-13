@@ -24,8 +24,17 @@
 ### 必要な環境変数
 
 ```bash
+# Supabase環境変数
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# サイトURL
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Stripe環境変数
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret
 ```
 
 ### 開発サーバーの起動

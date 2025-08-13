@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Lock, LogIn, Mail } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { login } from "./action";
@@ -17,7 +16,6 @@ export default function Login() {
 	const [message, setMessage] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const router = useRouter();
 	const supabase = createClient();
 
 	// URLパラメータからエラーやメッセージを取得
