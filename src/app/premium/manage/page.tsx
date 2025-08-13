@@ -46,7 +46,7 @@ async function ManagePageContent() {
   const subscriptionStatus = premiumStatus?.subscription_status || 'active';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900/40 pt-8">
+    <div className="min-h-screen bg-white dark:bg-gray-900 pt-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ヘッダー */}
         <div className="mb-8">
@@ -60,7 +60,7 @@ async function ManagePageContent() {
           </div>
 
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full text-lg font-bold shadow-lg mb-4">
+            <div className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full text-lg font-bold shadow-lg mb-4">
               <Crown className="w-6 h-6" />
               プレミアム会員
             </div>
@@ -82,7 +82,7 @@ async function ManagePageContent() {
                 アクティブなプレミアムプラン
               </CardTitle>
               <div className="text-right">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">¥300/月</div>
+                <div className="text-2xl font-bold text-black dark:text-gray-100">¥300/月</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   ステータス: <span className="font-medium text-green-600 capitalize">{subscriptionStatus}</span>
                 </div>
@@ -95,19 +95,19 @@ async function ManagePageContent() {
                 <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">利用中の特典</h3>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-center gap-2">
-                    <Infinity className="w-4 h-4 text-blue-600" />
+                    <Infinity className="w-4 h-4 text-black dark:text-gray-300" />
                     <span className="text-gray-700 dark:text-gray-300">無制限のタスク作成</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                    <TrendingUp className="w-4 h-4 text-black dark:text-gray-300" />
                     <span className="text-gray-700 dark:text-gray-300">1年間の詳細統計</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Moon className="w-4 h-4 text-blue-600" />
+                    <Moon className="w-4 h-4 text-black dark:text-gray-300" />
                     <span className="text-gray-700 dark:text-gray-300">ダークモード機能</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-blue-600" />
+                    <Star className="w-4 h-4 text-black dark:text-gray-300" />
                     <span className="text-gray-700 dark:text-gray-300">優先サポート</span>
                   </li>
                 </ul>
@@ -142,8 +142,8 @@ async function ManagePageContent() {
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-black dark:text-gray-300" />
                 </div>
                 <div>
                   <CardTitle className="text-lg text-gray-900 dark:text-gray-100">統計を確認</CardTitle>
@@ -153,7 +153,7 @@ async function ManagePageContent() {
             </CardHeader>
             <CardContent>
               <Link href="/statistics">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="w-full bg-black hover:bg-gray-800 text-white">
                   統計画面へ
                 </Button>
               </Link>
@@ -163,8 +163,8 @@ async function ManagePageContent() {
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                  <Settings className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-black dark:text-gray-300" />
                 </div>
                 <div>
                   <CardTitle className="text-lg text-gray-900 dark:text-gray-100">プロフィール</CardTitle>
@@ -184,8 +184,8 @@ async function ManagePageContent() {
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-black dark:text-gray-300" />
                 </div>
                 <div>
                   <CardTitle className="text-lg text-gray-900 dark:text-gray-100">タスク管理</CardTitle>
@@ -263,8 +263,8 @@ async function ManagePageContent() {
           </CardHeader>
           <CardContent>
             <div className="text-center py-6">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Star className="w-8 h-8 text-black dark:text-gray-300" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 プレミアムサポート
@@ -276,7 +276,7 @@ async function ManagePageContent() {
                 <Button variant="outline">
                   よくある質問
                 </Button>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="bg-black hover:bg-gray-800 text-white">
                   サポートに連絡
                 </Button>
               </div>
@@ -298,8 +298,8 @@ async function ManagePageContent() {
 export default function ManagePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900/40 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-black dark:border-gray-300 border-t-transparent rounded-full"></div>
       </div>
     }>
       <ManagePageContent />

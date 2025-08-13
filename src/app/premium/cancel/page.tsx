@@ -5,7 +5,7 @@ import { XCircle, Home, Crown, ArrowRight } from 'lucide-react';
 
 export default function CancelPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900/40 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4">
       <div className="max-w-2xl mx-auto text-center">
         <Card className="shadow-xl">
           <CardHeader className="pb-4">
@@ -49,31 +49,31 @@ export default function CancelPage() {
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
               <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 プレミアムプランの特典
               </h3>
-              <p className="text-sm text-blue-800 dark:text-blue-400 mb-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                 月300円で以下の機能が利用可能になります：
               </p>
               <div className="grid md:grid-cols-2 gap-2 text-left text-sm">
-                <div className="text-blue-700 dark:text-blue-300">• 無制限のタスク作成</div>
-                <div className="text-blue-700 dark:text-blue-300">• 1年間の詳細統計</div>
-                <div className="text-blue-700 dark:text-blue-300">• ダークモード機能</div>
-                <div className="text-blue-700 dark:text-blue-300">• 優先サポート</div>
+                <div className="text-gray-700 dark:text-gray-300">• 無制限のタスク作成</div>
+                <div className="text-gray-700 dark:text-gray-300">• 1年間の詳細統計</div>
+                <div className="text-gray-700 dark:text-gray-300">• ダークモード機能</div>
+                <div className="text-gray-700 dark:text-gray-300">• 優先サポート</div>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/">
-                <Button className="bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white">
+                <Button className="bg-black hover:bg-gray-800 text-white">
                   <Home className="w-4 h-4 mr-2" />
                   タスク管理を続ける
                 </Button>
               </Link>
               
               <Link href="/premium/upgrade">
-                <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30">
+                <Button variant="outline" className="border-gray-200 text-black hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800/50">
                   <Crown className="w-4 h-4 mr-2" />
                   プレミアムを検討する
                 </Button>
@@ -84,7 +84,7 @@ export default function CancelPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 プレミアムプランはいつでもアップグレード可能です
               </p>
-              <Link href="/premium/upgrade" className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline text-sm mt-1">
+              <Link href="/premium/upgrade" className="inline-flex items-center text-black dark:text-gray-300 hover:underline text-sm mt-1">
                 詳細を確認する
                 <ArrowRight className="w-3 h-3 ml-1" />
               </Link>

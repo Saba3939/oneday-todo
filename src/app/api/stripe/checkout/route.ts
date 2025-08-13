@@ -44,6 +44,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Checkout Sessionを作成
+    // 本番環境では詳細ログを制限
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🛒 Checkout Session作成中:', {
+        customerId,
+        userId: user.id,
+        email: user.email
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -60,6 +69,17 @@ export async function POST(req: NextRequest) {
         supabase_user_id: user.id,
       },
     });
+
+    // 本番環境では機密情報をログに出力しない
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('✅ Checkout Session作成完了:', {
+        sessionId: session.id,
+        url: session.url,
+        metadata: session.metadata
+      });
+    } else {
+      console.log('✅ Checkout Session作成完了');
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

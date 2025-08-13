@@ -1,7 +1,8 @@
-import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
-import { getUserPremiumStatus } from '@/lib/tasks';
+'use client';
+
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -17,26 +18,54 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-async function UpgradePageContent() {
-  const supabase = await createClient();
-  
-  // 認証確認
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    redirect('/login');
-  }
+function UpgradePageContent() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [upgrading, setUpgrading] = useState(false);
+  // 認証とプレミアム状態の管理
 
-  // プレミアムステータス確認
-  const premiumStatus = await getUserPremiumStatus();
-  const isPremium = premiumStatus?.is_premium || false;
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient();
+      
+      // 認証確認
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        router.push('/login');
+        return;
+      }
 
-  // すでにプレミアムユーザーの場合は管理画面にリダイレクト
-  if (isPremium) {
-    redirect('/premium/manage');
+      // プレミアムステータス確認
+        try {
+        const response = await fetch('/api/premium-status');
+        const data = await response.json();
+        const premium = data?.is_premium || false;
+        
+        // すでにプレミアムユーザーの場合は管理画面にリダイレクト
+        if (premium) {
+          router.push('/premium/manage');
+          return;
+        }
+      } catch (error) {
+        console.error('プレミアムステータス確認エラー:', error);
+      }
+
+      setLoading(false);
+    }
+
+    checkAuth();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-black border-t-transparent rounded-full"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 pt-8">
+    <div className="min-h-screen bg-white pt-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ヘッダー */}
         <div className="mb-8">
@@ -50,11 +79,11 @@ async function UpgradePageContent() {
           </div>
 
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full text-lg font-bold shadow-lg mb-4">
+            <div className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full text-lg font-bold shadow-lg mb-4">
               <Crown className="w-6 h-6" />
               プレミアムプラン
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl font-bold text-black mb-4">
               生産性を次のレベルへ
             </h1>
             <p className="text-xl text-gray-600 mb-8">
@@ -68,7 +97,7 @@ async function UpgradePageContent() {
           {/* 無料プラン */}
           <Card className="border-gray-200">
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold text-gray-900">
+              <CardTitle className="text-2xl font-bold text-black">
                 無料プラン
               </CardTitle>
               <div className="text-3xl font-bold text-gray-600 mt-2">
@@ -106,72 +135,96 @@ async function UpgradePageContent() {
           </Card>
 
           {/* プレミアムプラン */}
-          <Card className="border-blue-200 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-gradient-to-l from-blue-600 to-blue-500 text-white px-4 py-1 text-sm font-medium">
+          <Card className="border-gray-200 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-black text-white px-4 py-1 text-sm font-medium">
               おすすめ
             </div>
             <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl font-bold text-blue-900 flex items-center justify-center gap-2">
+              <CardTitle className="text-2xl font-bold text-black flex items-center justify-center gap-2">
                 <Crown className="w-6 h-6 text-yellow-500" />
                 プレミアムプラン
               </CardTitle>
-              <div className="text-4xl font-bold text-blue-600 mt-2">
+              <div className="text-4xl font-bold text-black mt-2">
                 ¥300
-                <span className="text-lg font-normal text-blue-500">/月</span>
+                <span className="text-lg font-normal text-gray-600">/月</span>
               </div>
-              <p className="text-sm text-blue-600 mt-1">初月無料キャンペーン中！</p>
+              <p className="text-sm text-gray-600 mt-1">初月無料キャンペーン中！</p>
             </CardHeader>
             <CardContent className="pt-4">
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
-                  <Infinity className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <Infinity className="w-5 h-5 text-black flex-shrink-0" />
                   <span className="font-medium">無制限のタスク作成</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <BarChart3 className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <BarChart3 className="w-5 h-5 text-black flex-shrink-0" />
                   <span className="font-medium">1年間の詳細統計</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <TrendingUp className="w-5 h-5 text-black flex-shrink-0" />
                   <span className="font-medium">月次レポート機能</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Moon className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <Moon className="w-5 h-5 text-black flex-shrink-0" />
                   <span className="font-medium">ダークモード対応</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Zap className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <Zap className="w-5 h-5 text-black flex-shrink-0" />
                   <span className="font-medium">優先サポート</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <Shield className="w-5 h-5 text-black flex-shrink-0" />
                   <span className="font-medium">データバックアップ</span>
                 </li>
               </ul>
               
-              <form action="/api/stripe/checkout" method="POST" className="mt-6">
-                <Button 
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 text-lg shadow-lg"
-                >
-                  今すぐアップグレード
-                </Button>
-              </form>
+              <Button 
+                onClick={async () => {
+                  if (upgrading) return;
+                  
+                  setUpgrading(true);
+                  try {
+                    const response = await fetch('/api/stripe/checkout', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.url) {
+                      window.location.href = data.url;
+                    } else {
+                      alert('決済セッションの作成に失敗しました');
+                      setUpgrading(false);
+                    }
+                  } catch (error) {
+                    console.error('決済処理エラー:', error);
+                    alert('エラーが発生しました');
+                    setUpgrading(false);
+                  }
+                }}
+                disabled={upgrading}
+                className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 text-lg shadow-lg disabled:opacity-50"
+              >
+                {upgrading ? '処理中...' : '今すぐアップグレード'}
+              </Button>
             </CardContent>
           </Card>
         </div>
 
         {/* 詳細機能説明 */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+          <h2 className="text-3xl font-bold text-center text-black mb-8">
             プレミアム機能の詳細
           </h2>
           
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center">
               <CardHeader>
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Infinity className="w-8 h-8 text-blue-600" />
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Infinity className="w-8 h-8 text-black" />
                 </div>
                 <CardTitle className="text-lg">無制限のタスク</CardTitle>
               </CardHeader>
@@ -184,8 +237,8 @@ async function UpgradePageContent() {
 
             <Card className="text-center">
               <CardHeader>
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="w-8 h-8 text-black" />
                 </div>
                 <CardTitle className="text-lg">詳細統計</CardTitle>
               </CardHeader>
@@ -198,8 +251,8 @@ async function UpgradePageContent() {
 
             <Card className="text-center">
               <CardHeader>
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Moon className="w-8 h-8 text-purple-600" />
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Moon className="w-8 h-8 text-black" />
                 </div>
                 <CardTitle className="text-lg">ダークモード</CardTitle>
               </CardHeader>
@@ -214,7 +267,7 @@ async function UpgradePageContent() {
 
         {/* FAQ */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+          <h2 className="text-3xl font-bold text-center text-black mb-8">
             よくある質問
           </h2>
           
@@ -258,7 +311,7 @@ async function UpgradePageContent() {
         <div className="text-center py-8 border-t border-gray-200">
           <p className="text-gray-600">
             お困りの際は、
-            <Link href="/support" className="text-blue-600 hover:underline">
+            <Link href="/support" className="text-black hover:underline">
               サポートページ
             </Link>
             までお気軽にお問い合わせください。
@@ -272,8 +325,8 @@ async function UpgradePageContent() {
 export default function UpgradePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-black border-t-transparent rounded-full"></div>
       </div>
     }>
       <UpgradePageContent />

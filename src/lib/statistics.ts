@@ -32,29 +32,31 @@ export async function getStatistics(days: number = 7): Promise<DailyStatistics[]
   const maxDays = isPremium ? 365 : 7; // プレミアムは1年、無料は1週間
   const limitedDays = Math.min(days, maxDays);
 
-  // 指定期間の開始日を計算
+  // 指定期間の日付を計算（今日まで）
   const endDate = new Date();
-  const startDate = new Date();
+  endDate.setHours(23, 59, 59, 999); // 今日の終わり
+  
+  const startDate = new Date(endDate);
   startDate.setDate(endDate.getDate() - limitedDays + 1);
+  startDate.setHours(0, 0, 0, 0); // 一日の始まり
 
-  // タスクデータから統計を計算
-  const { data: tasks, error: tasksError } = await supabase
-    .from('tasks')
-    .select('created_at, is_completed, completed_at')
+  // task_statisticsテーブルから統計データを取得
+  const { data: statistics, error: statsError } = await supabase
+    .from('task_statistics')
+    .select('date, total_tasks, completed_tasks, completion_rate')
     .eq('user_id', user.id)
-    .gte('created_at', startDate.toISOString())
-    .lte('created_at', endDate.toISOString())
-    .order('created_at', { ascending: true });
+    .gte('date', startDate.toISOString().split('T')[0])
+    .lte('date', endDate.toISOString().split('T')[0])
+    .order('date', { ascending: true });
 
-  if (tasksError) {
-    console.error('統計データ取得エラー:', tasksError);
+  if (statsError) {
+    console.error('統計データ取得エラー:', statsError);
     throw new Error('統計データの取得に失敗しました');
   }
 
-  // 日別に統計を集計
+  // 期間内の全ての日付を初期化
   const statisticsMap = new Map<string, DailyStatistics>();
   
-  // 期間内の全ての日付を初期化
   for (let i = 0; i < limitedDays; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
@@ -68,20 +70,14 @@ export async function getStatistics(days: number = 7): Promise<DailyStatistics[]
     });
   }
 
-  // タスクデータを日別に集計
-  tasks?.forEach(task => {
-    const taskDate = task.created_at.split('T')[0];
-    const stats = statisticsMap.get(taskDate);
-    
-    if (stats) {
-      stats.total_tasks += 1;
-      if (task.is_completed) {
-        stats.completed_tasks += 1;
-      }
-      stats.completion_rate = stats.total_tasks > 0 
-        ? Math.round((stats.completed_tasks / stats.total_tasks) * 100) 
-        : 0;
-    }
+  // 取得した統計データでマップを更新
+  statistics?.forEach(stat => {
+    statisticsMap.set(stat.date, {
+      date: stat.date,
+      total_tasks: stat.total_tasks || 0,
+      completed_tasks: stat.completed_tasks || 0,
+      completion_rate: stat.completion_rate || 0,
+    });
   });
 
   return Array.from(statisticsMap.values()).sort((a, b) => 

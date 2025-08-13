@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import TodoApp from "@/components/TodoApp";
 import AuthSuccessNotification from "@/components/AuthSuccessNotification";
+import UserDebugInfo from "@/components/UserDebugInfo";
 
 export default async function TasksPage() {
 	const supabase = await createClient();
@@ -47,6 +48,7 @@ export default async function TasksPage() {
 			<>
 				<AuthSuccessNotification />
 				<TodoApp user={userProfile} lastLoginAt={lastLoginAt} isGuest={false} />
+				<UserDebugInfo />
 			</>
 		);
 	} else {

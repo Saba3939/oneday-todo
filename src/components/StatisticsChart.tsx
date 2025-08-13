@@ -66,8 +66,8 @@ export function StatisticsChart({
       {
         label: '総タスク数',
         data: data.map(item => item.total_tasks),
-        borderColor: 'rgb(59, 130, 246)', // blue-500
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: 'rgb(0, 0, 0)', // black
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
         borderWidth: 2,
         fill: type === 'line',
         tension: 0.4,
@@ -160,7 +160,7 @@ export function StatisticsChart({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className='text-lg font-medium text-gray-900'>
+          <CardTitle className='text-lg font-medium text-black'>
             {title}
           </CardTitle>
         </CardHeader>
@@ -183,11 +183,11 @@ export function StatisticsChart({
     <Card className={`${!isPremium ? 'opacity-75' : ''}`}>
       <CardHeader>
         <div className='flex items-center justify-between'>
-          <CardTitle className='text-lg font-medium text-gray-900'>
+          <CardTitle className='text-lg font-medium text-black'>
             {title}
           </CardTitle>
           {!isPremium && (
-            <div className='text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded'>
+            <div className='text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded'>
               無料プラン: 7日間のみ
             </div>
           )}
@@ -225,31 +225,31 @@ export function StatisticsSummary({ data, isPremium = false }: StatisticsSummary
     <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6'>
       <Card>
         <CardContent className='p-4'>
-          <div className='text-2xl font-bold text-blue-600'>{totalTasks}</div>
+          <div className='text-2xl font-bold text-black'>{totalTasks}</div>
           <div className='text-sm text-gray-600'>総タスク数</div>
         </CardContent>
       </Card>
       
       <Card>
         <CardContent className='p-4'>
-          <div className='text-2xl font-bold text-green-600'>{completedTasks}</div>
+          <div className='text-2xl font-bold text-black'>{completedTasks}</div>
           <div className='text-sm text-gray-600'>完了タスク数</div>
         </CardContent>
       </Card>
       
       <Card>
         <CardContent className='p-4'>
-          <div className='text-2xl font-bold text-purple-600'>{averageCompletionRate}%</div>
+          <div className='text-2xl font-bold text-black'>{averageCompletionRate}%</div>
           <div className='text-sm text-gray-600'>平均完了率</div>
         </CardContent>
       </Card>
       
       <Card>
         <CardContent className='p-4'>
-          <div className='text-2xl font-bold text-orange-600'>{activeDays}</div>
+          <div className='text-2xl font-bold text-black'>{activeDays}</div>
           <div className='text-sm text-gray-600'>アクティブ日数</div>
           {!isPremium && (
-            <div className='text-xs text-amber-600 mt-1'>過去7日間</div>
+            <div className='text-xs text-gray-600 mt-1'>過去7日間</div>
           )}
         </CardContent>
       </Card>

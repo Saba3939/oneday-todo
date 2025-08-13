@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createClient } from '@/utils/supabase/server';
+import { createServiceClient } from '@/utils/supabase/service';
 import Stripe from 'stripe';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -9,16 +9,29 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const sig = req.headers.get('stripe-signature')!;
 
+  // 本番環境では基本情報のみログ出力
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🔍 Webhook受信:', {
+      hasBody: !!body,
+      bodyLength: body.length,
+      hasSignature: !!sig,
+      timestamp: new Date().toISOString()
+    });
+  }
+
   let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    // 本番では簡潔なログのみ
+    console.log(`✅ Webhook受信: ${event.type} - ${event.id}`);
   } catch (err) {
-    console.error('Webhook signature verification failed:', err);
+    console.error('❌ Webhook署名検証失敗:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  // Webhook用のSupabaseクライアント（サービスロール）
+  const supabase = createServiceClient();
 
   try {
     switch (event.type) {
@@ -28,18 +41,93 @@ export async function POST(req: NextRequest) {
         const subscriptionId = session.subscription as string;
         const supabaseUserId = session.metadata?.supabase_user_id;
 
+        // 本番では機密情報をログに出力しない
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`🛒 決済完了: customer=${customerId}, user=${supabaseUserId}`);
+        } else {
+          console.log('🛒 決済完了処理開始');
+        }
+
         if (supabaseUserId) {
-          // プレミアムステータスを更新
-          await supabase
+
+          // プロファイルが存在するかチェックし、なければ作成
+          const { data: existingProfile, error: selectError } = await supabase
             .from('profiles')
-            .update({
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-              subscription_status: 'active',
-              is_premium: true,
-              premium_expires_at: null, // サブスクリプションの場合はnull
-            })
-            .eq('id', supabaseUserId);
+            .select('id')
+            .eq('id', supabaseUserId)
+            .single();
+
+          if (selectError && selectError.code === 'PGRST116') {
+            // プロファイルが存在しない場合は作成
+
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: supabaseUserId,
+                display_name: 'プレミアムユーザー',
+                is_premium: true,
+                subscription_status: 'active',
+                stripe_customer_id: customerId,
+                stripe_subscription_id: subscriptionId,
+                premium_expires_at: null
+              });
+            
+            if (insertError) {
+              console.error('❌ プロファイル作成エラー:', insertError);
+            } else {
+              console.log('✅ プレミアム登録完了');
+            }
+          } else if (!selectError && existingProfile) {
+            // プレミアムステータスを更新
+
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                stripe_customer_id: customerId,
+                stripe_subscription_id: subscriptionId,
+                subscription_status: 'active',
+                is_premium: true,
+                premium_expires_at: null
+              })
+              .eq('id', supabaseUserId);
+              
+            if (updateError) {
+              console.error('❌ プロファイル更新エラー:', updateError);
+            } else {
+              console.log('✅ プレミアム更新完了');
+            }
+          } else {
+            console.error('❌ プロファイル確認で予期しないエラー:', selectError);
+          }
+        } else {
+          console.warn('⚠️ メタデータにユーザーIDなし、顧客IDから検索');
+          
+          // fallback: 顧客IDから既存プロファイルを検索
+          const { data: profileByCustomer, error: customerError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('stripe_customer_id', customerId)
+            .single();
+            
+          if (!customerError && profileByCustomer) {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                stripe_subscription_id: subscriptionId,
+                subscription_status: 'active',
+                is_premium: true,
+                premium_expires_at: null
+              })
+              .eq('id', profileByCustomer.id);
+              
+            if (updateError) {
+              console.error('❌ プロファイル更新エラー:', updateError);
+            } else {
+              console.log('✅ プレミアム更新完了（顧客ID検索）');
+            }
+          } else {
+            console.error('❌ 顧客IDからプロファイルを見つけられません:', customerId);
+          }
         }
         break;
       }
