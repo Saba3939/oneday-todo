@@ -17,6 +17,14 @@
 /*.ico
   Cache-Control: public,max-age=86400
   Content-Type: image/x-icon
+  
+/*.gif
+  Cache-Control: public,max-age=86400
+  Content-Type: image/gif
+
+/*.svg
+  Cache-Control: public,max-age=86400
+  Content-Type: image/svg+xml
 
 /*.webp
   Cache-Control: public,max-age=86400
@@ -27,5 +35,10 @@
   Cache-Control: public,max-age=3600
   Content-Type: application/json
 
+/*.ico
+  Cache-Control: public,max-age=86400
+  Content-Type: image/x-icon
+
 /sw.js
-  Cache-Control: no-cache
+  Cache-Control: no-cache,no-store,must-revalidate
+  Content-Type: application/javascript
