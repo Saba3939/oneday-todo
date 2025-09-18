@@ -9,6 +9,10 @@ const withPWA = nextPWA({
 
 const nextConfig = withPWA({
 	trailingSlash: true,
+	// Cloudflareでの画像最適化を無効化
+	images: {
+		unoptimized: true,
+	},
 	/* config options here */
 	webpack: (config) => {
 		// Exclude Supabase functions from the build process

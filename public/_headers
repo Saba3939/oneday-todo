@@ -1,2 +1,31 @@
 /_next/static/*
   Cache-Control: public,max-age=31536000,immutable
+
+# 画像ファイルのキャッシュ設定
+/*.png
+  Cache-Control: public,max-age=86400
+  Content-Type: image/png
+
+/*.jpg
+  Cache-Control: public,max-age=86400
+  Content-Type: image/jpeg
+
+/*.jpeg
+  Cache-Control: public,max-age=86400
+  Content-Type: image/jpeg
+
+/*.ico
+  Cache-Control: public,max-age=86400
+  Content-Type: image/x-icon
+
+/*.webp
+  Cache-Control: public,max-age=86400
+  Content-Type: image/webp
+
+# PWA関連ファイル
+/manifest.json
+  Cache-Control: public,max-age=3600
+  Content-Type: application/json
+
+/sw.js
+  Cache-Control: no-cache
