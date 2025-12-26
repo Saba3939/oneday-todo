@@ -9,7 +9,6 @@ https://oneday-todo.kents3939.workers.dev
 - **日次タスク管理**: 日付ベースでタスクを整理
 - **ドラッグ&ドロップ**: タスクの順序を直感的に変更
 - **前日タスク引き継ぎ**: 未完了タスクを翌日に簡単にインポート
-- **ポモドーロタイマー統合**: 集中作業をサポート
 - **PWA対応**: スマートフォンやデスクトップでアプリライクな体験
 - **リアルタイム同期**: Supabaseによる即座なデータ同期
 
@@ -18,7 +17,7 @@ https://oneday-todo.kents3939.workers.dev
 - **フロントエンド**: Next.js 15, React 19, TypeScript
 - **スタイリング**: Tailwind CSS, shadcn/ui
 - **バックエンド**: Supabase (PostgreSQL + Auth)
-- **デプロイ**: Cloudflare Pages
+- **デプロイ**: Cloudflare
 - **PWA**: next-pwa
 
 ## 開発環境のセットアップ
