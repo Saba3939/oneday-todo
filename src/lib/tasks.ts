@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 
+
 export interface Task {
 	id: number;
 	user_id: string;
@@ -9,6 +10,7 @@ export interface Task {
 	content: string;
 	is_completed: boolean;
 	created_at: string;
+	completed_at?: string; // 統計機能用に追加
 }
 
 export async function getTasks(): Promise<Task[]> {
@@ -31,7 +33,7 @@ export async function getTasks(): Promise<Task[]> {
 	}
 	return tasks || [];
 }
-export async function addTask(content: string): Promise<Task> {
+export async function addTask(content: string, targetDate?: string): Promise<Task> {
 	const supabase = await createClient();
 	const {
 		data: { user },
@@ -39,6 +41,14 @@ export async function addTask(content: string): Promise<Task> {
 	} = await supabase.auth.getUser();
 	if (userError || !user) {
 		throw new Error("ユーザー取得エラー:");
+	}
+
+	// プレミアム制限チェック
+	const checkDate = targetDate || new Date().toISOString().split('T')[0];
+	const { canAdd, reason } = await canAddTask(checkDate);
+	
+	if (!canAdd) {
+		throw new Error(reason || 'タスクの追加が制限されています');
 	}
 
 	// 最大order_indexを取得するクエリを最適化
@@ -70,6 +80,14 @@ export async function addTask(content: string): Promise<Task> {
 		throw new Error("タスク追加エラー:");
 	}
 
+	// 統計を更新（タスク作成数をカウント）
+	try {
+		await incrementDailyTaskCount(checkDate);
+	} catch (statsError) {
+		console.error('統計更新エラー:', statsError);
+		// 統計の更新エラーはタスク作成を失敗させない
+	}
+
 	return data;
 }
 
@@ -84,16 +102,29 @@ export async function toggleTask(taskId: number): Promise<void> {
 	}
 	const { data: currentTask, error: fetchError } = await supabase
 		.from("tasks")
-		.select("is_completed")
+		.select("is_completed, created_at")
 		.eq("id", taskId)
 		.eq("user_id", user.id)
 		.single();
 	if (fetchError) {
 		throw new Error("タスク取得エラー:");
 	}
+	
+	const newIsCompleted = !currentTask?.is_completed;
+	const updateData: { is_completed: boolean; completed_at?: string | null } = {
+		is_completed: newIsCompleted,
+	};
+	
+	// 完了時に completed_at を設定、未完了時はnullに
+	if (newIsCompleted) {
+		updateData.completed_at = new Date().toISOString();
+	} else {
+		updateData.completed_at = null;
+	}
+	
 	const { error } = await supabase
 		.from("tasks")
-		.update({ is_completed: !currentTask?.is_completed })
+		.update(updateData)
 		.eq("id", taskId)
 		.eq("user_id", user.id)
 		.select()
@@ -101,6 +132,16 @@ export async function toggleTask(taskId: number): Promise<void> {
 	if (error) {
 		console.error("タスク更新エラー:", error);
 		throw new Error("タスク更新エラー:");
+	}
+	
+	// 統計データを更新（非同期で実行、エラーは無視）
+	if (currentTask?.created_at) {
+		try {
+			const taskDate = new Date(currentTask.created_at).toISOString().split('T')[0];
+			await updateDailyTaskStatistics(taskDate);
+		} catch (statsError) {
+			console.warn("統計更新エラー:", statsError);
+		}
 	}
 }
 // タスクの内容を更新
@@ -137,6 +178,20 @@ export async function deleteTask(id: string): Promise<void> {
 	if (userError || !user) {
 		throw new Error("ユーザー取得エラー:");
 	}
+	
+	// 削除前にタスクの作成日を取得
+	const { data: taskToDelete, error: fetchError } = await supabase
+		.from("tasks")
+		.select("created_at")
+		.eq("id", id)
+		.eq("user_id", user.id)
+		.single();
+
+	if (fetchError) {
+		console.error("削除対象タスク取得エラー:", fetchError);
+		throw new Error("削除対象タスク取得エラー:");
+	}
+
 	// Supabaseのtasksテーブルから物理削除
 	const { error } = await supabase
 		.from("tasks")
@@ -146,6 +201,17 @@ export async function deleteTask(id: string): Promise<void> {
 	if (error) {
 		console.error("タスク削除エラー:", error);
 		throw new Error("タスク削除エラー:");
+	}
+
+	// 統計を更新
+	if (taskToDelete?.created_at) {
+		try {
+			const taskDate = new Date(taskToDelete.created_at).toISOString().split('T')[0];
+			await updateDailyTaskStatistics(taskDate);
+		} catch (statsError) {
+			console.error('削除時統計更新エラー:', statsError);
+			// 統計の更新エラーは削除を失敗させない
+		}
 	}
 }
 
@@ -227,6 +293,203 @@ export async function updateTaskOrderEfficient(
 	if (error) {
 		console.error("タスク順序更新エラー:", error);
 		throw new Error("タスクの順序更新に失敗しました");
+	}
+}
+
+/**
+ * ユーザーのプレミアムステータスを取得
+ */
+export async function getUserPremiumStatus(): Promise<{is_premium: boolean; subscription_status?: string; premium_expires_at?: string} | null> {
+	const supabase = await createClient();
+	
+	const { data: { user }, error: authError } = await supabase.auth.getUser();
+	if (authError || !user) {
+		return null;
+	}
+
+	const { data: profile, error: profileError } = await supabase
+		.from('profiles')
+		.select('is_premium, subscription_status, premium_expires_at')
+		.eq('id', user.id)
+		.single();
+
+	if (profileError) {
+		console.error('Premium status fetch error:', profileError);
+		return { is_premium: false };
+	}
+
+	return {
+		is_premium: profile?.is_premium || false,
+		subscription_status: profile?.subscription_status,
+		premium_expires_at: profile?.premium_expires_at,
+	};
+}
+
+/**
+ * タスク追加が可能かチェック（プレミアム制限考慮）
+ */
+export async function canAddTask(date: string): Promise<{ canAdd: boolean; reason?: string; currentCount?: number }> {
+	const supabase = await createClient();
+	
+	// プレミアムステータス取得
+	const premiumStatus = await getUserPremiumStatus();
+	const isPremium = premiumStatus?.is_premium || false;
+	
+	// プレミアムユーザーは制限なし
+	if (isPremium) {
+		return { canAdd: true };
+	}
+
+	// 無料ユーザーの制限チェック
+	const { data: { user }, error: authError } = await supabase.auth.getUser();
+	if (authError || !user) {
+		return { canAdd: false, reason: 'ユーザー認証エラー' };
+	}
+
+	// task_statisticsテーブルから該当日の作成済みタスク数を取得
+	const { data: statistics, error: statsError } = await supabase
+		.from('task_statistics')
+		.select('total_tasks')
+		.eq('user_id', user.id)
+		.eq('date', date)
+		.single();
+
+	let currentCount = 0;
+
+	if (statsError && statsError.code !== 'PGRST116') {
+		console.error('Statistics fetch error:', statsError);
+		// エラーが発生した場合は従来の方法でカウント
+		const { data: tasks, error: tasksError } = await supabase
+			.from('tasks')
+			.select('id')
+			.eq('user_id', user.id)
+			.gte('created_at', `${date}T00:00:00`)
+			.lt('created_at', `${date}T23:59:59`);
+
+		if (tasksError) {
+			console.error('Task count fetch error:', tasksError);
+			return { canAdd: false, reason: 'タスク数の取得エラー' };
+		}
+
+		currentCount = tasks?.length || 0;
+	} else {
+		// 統計データがある場合はそれを使用、ない場合は0
+		currentCount = statistics?.total_tasks || 0;
+	}
+
+	const maxTasks = 10; // 無料プランの制限
+
+	if (currentCount >= maxTasks) {
+		return { 
+			canAdd: false, 
+			reason: `無料プランでは1日${maxTasks}個までのタスクしか作成できません。プレミアムプランにアップグレードすると無制限になります。`,
+			currentCount 
+		};
+	}
+
+	return { canAdd: true, currentCount };
+}
+
+// 日次統計を更新するヘルパー関数
+async function updateDailyTaskStatistics(date: string): Promise<void> {
+	const supabase = await createClient();
+	const { data: { user }, error: authError } = await supabase.auth.getUser();
+	if (authError || !user) {
+		throw new Error('ユーザー認証エラー');
+	}
+
+	// 該当日の現在のタスク状況を取得
+	const { data: currentTasks, error: tasksError } = await supabase
+		.from('tasks')
+		.select('id, is_completed')
+		.eq('user_id', user.id)
+		.gte('created_at', `${date}T00:00:00`)
+		.lt('created_at', `${date}T23:59:59`);
+
+	if (tasksError) {
+		console.error('Tasks fetch error for statistics:', tasksError);
+		return;
+	}
+
+	const completedTasks = currentTasks?.filter(t => t.is_completed).length || 0;
+	const totalCurrentTasks = currentTasks?.length || 0;
+
+	// 既存の統計を取得
+	const { data: existingStats } = await supabase
+		.from('task_statistics')
+		.select('total_tasks')
+		.eq('user_id', user.id)
+		.eq('date', date)
+		.single();
+
+	// total_tasksは削除されたタスクも含むため、現在のタスク数より少なくならないようにする
+	const totalTasks = Math.max(existingStats?.total_tasks || 0, totalCurrentTasks);
+	const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+	// 統計を更新または作成（UPSERT）
+	const { error: upsertError } = await supabase
+		.from('task_statistics')
+		.upsert({
+			user_id: user.id,
+			date,
+			total_tasks: totalTasks,
+			completed_tasks: completedTasks,
+			completion_rate: completionRate
+		});
+
+	if (upsertError) {
+		console.error('Statistics upsert error:', upsertError);
+	}
+}
+
+// タスク作成時に統計を更新するヘルパー関数
+async function incrementDailyTaskCount(date: string): Promise<void> {
+	const supabase = await createClient();
+	const { data: { user }, error: authError } = await supabase.auth.getUser();
+	if (authError || !user) {
+		throw new Error('ユーザー認証エラー');
+	}
+
+	// 既存の統計を取得
+	const { data: existingStats } = await supabase
+		.from('task_statistics')
+		.select('*')
+		.eq('user_id', user.id)
+		.eq('date', date)
+		.single();
+
+	if (existingStats) {
+		// 既存のレコードがある場合はtotal_tasksを増やす
+		const { error: updateError } = await supabase
+			.from('task_statistics')
+			.update({ 
+				total_tasks: existingStats.total_tasks + 1,
+				// completion_rateも再計算
+				completion_rate: existingStats.total_tasks + 1 > 0 
+					? (existingStats.completed_tasks / (existingStats.total_tasks + 1)) * 100 
+					: 0
+			})
+			.eq('user_id', user.id)
+			.eq('date', date);
+
+		if (updateError) {
+			console.error('Statistics update error:', updateError);
+		}
+	} else {
+		// 新規レコードを作成
+		const { error: insertError } = await supabase
+			.from('task_statistics')
+			.insert({
+				user_id: user.id,
+				date,
+				total_tasks: 1,
+				completed_tasks: 0,
+				completion_rate: 0
+			});
+
+		if (insertError) {
+			console.error('Statistics insert error:', insertError);
+		}
 	}
 }
 
